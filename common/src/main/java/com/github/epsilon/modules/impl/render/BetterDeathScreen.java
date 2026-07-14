@@ -29,7 +29,7 @@ public class BetterDeathScreen extends Module {
     private final KeybindSetting freecamKey = keybindSetting("Freecam Key", GLFW.GLFW_KEY_E);
 
     private BetterDeathScreen() {
-        super("Better Death Screen", Category.PLAYER);
+        super("Better Death Screen", Category.MISC);
     }
 
     @Override

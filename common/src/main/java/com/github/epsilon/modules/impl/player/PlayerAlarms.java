@@ -31,7 +31,7 @@ public class PlayerAlarms extends Module {
     public static final PlayerAlarms INSTANCE = new PlayerAlarms();
 
     private PlayerAlarms() {
-        super("Player Alarms", Category.PLAYER);
+        super("Player Alarms", Category.MISC);
     }
 
     private final SettingGroup sgGeneral = settingGroup("General");

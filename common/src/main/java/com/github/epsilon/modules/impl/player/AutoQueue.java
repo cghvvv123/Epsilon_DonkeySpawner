@@ -31,7 +31,7 @@ public class AutoQueue extends Module {
     private final JsonObject questions;
 
     private AutoQueue() {
-        super("Auto Queue", Category.PLAYER);
+        super("Auto Queue", Category.MISC);
         this.questions = loadQuestions();
     }
 
