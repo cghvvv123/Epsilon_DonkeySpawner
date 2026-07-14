@@ -14,6 +14,7 @@ import com.github.epsilon.gui.scene.GuiScene;
 import com.github.epsilon.modules.impl.ClientSetting;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.client.gui.screens.TitleScreen;
 import net.minecraft.client.gui.screens.multiplayer.JoinMultiplayerScreen;
 import net.minecraft.client.gui.screens.multiplayer.SafetyScreen;
 import net.minecraft.client.gui.screens.options.OptionsScreen;
@@ -31,9 +32,12 @@ public class MainMenuScreen extends Screen {
 
     public static final MainMenuScreen INSTANCE = new MainMenuScreen();
 
+    private static boolean skipVanillaMenuReplace;
+
     private final GuiScene scene = new GuiScene();
 
     private final List<MenuEntry> entries = new ArrayList<>();
+    private final MenuEntry vanillaMenuEntry;
 
     private LuminRenderSystem.LuminRenderTarget backgroundRenderTarget;
     private LuminRenderSystem.LuminRenderTarget uiRenderTarget;
@@ -54,6 +58,19 @@ public class MainMenuScreen extends Screen {
         })));
         entries.add(new MenuEntry("Options", () -> minecraft.setScreen(new OptionsScreen(this, minecraft.options, false))));
         entries.add(new MenuEntry("Quit", minecraft::stop));
+        vanillaMenuEntry = new MenuEntry("VanillaMainMenu", () -> {
+            skipVanillaMenuReplace = true;
+            minecraft.setScreen(new TitleScreen());
+        });
+    }
+
+    public static boolean consumeVanillaMenuReplaceBypass() {
+        if (!skipVanillaMenuReplace) {
+            return false;
+        }
+
+        skipVanillaMenuReplace = false;
+        return true;
     }
 
     @Override
@@ -67,6 +84,8 @@ public class MainMenuScreen extends Screen {
                 entry.hoverProgress = 0.0f;
                 entry.setBounds(0.0f, 0.0f, 0.0f, 0.0f);
             }
+            vanillaMenuEntry.hoverProgress = 0.0f;
+            vanillaMenuEntry.setBounds(0.0f, 0.0f, 0.0f, 0.0f);
         }
     }
 
@@ -137,6 +156,7 @@ public class MainMenuScreen extends Screen {
             for (int i = 0; i < entries.size(); i++) {
                 buildEntry(scope, entries.get(i), i, mouseX, mouseY, introProgress, layout);
             }
+            buildVanillaMenuEntry(scope, mouseX, mouseY, introProgress, layout);
         });
 
         scene.submit(GuiLayer.CONTENT, tree);
@@ -187,12 +207,51 @@ public class MainMenuScreen extends Screen {
         scope.layer(10, layer -> layer.text(localizedTitle(entry.title), drawX, textY, layout.buttonTextScale, labelColor));
     }
 
+    private void buildVanillaMenuEntry(PanelUiTree.Scope scope, int mouseX, int mouseY, float introProgress, Layout layout) {
+        float appear = easeOutCubic(introProgress);
+        if (appear <= 0.001f) {
+            vanillaMenuEntry.setBounds(0.0f, 0.0f, 0.0f, 0.0f);
+            return;
+        }
+
+        float drawX = (LuminRenderSystem.getScaledWidthInt() - layout.buttonWidth) * 0.5f;
+        float drawY = layout.buttonsY + layout.buttonHitHeight - 50.0f * layout.scale;
+        boolean hovered = vanillaMenuEntry.isHovered(mouseX, mouseY);
+        vanillaMenuEntry.hoverProgress = Mth.lerp(hovered ? 0.24f : 0.16f, vanillaMenuEntry.hoverProgress, hovered ? 1.0f : 0.0f);
+
+        float hover = vanillaMenuEntry.hoverProgress;
+        float buttonY = drawY - hover * 2.5f * layout.scale;
+        vanillaMenuEntry.setBounds(
+                drawX - layout.buttonHitPaddingX,
+                buttonY - layout.buttonHitPaddingTop,
+                layout.buttonWidth + layout.buttonHitPaddingX * 2.0f,
+                layout.buttonHitHeight
+        );
+
+        Color lineBase = applyAlpha(new Color(147, 143, 153), 0.70f * appear);
+        Color lineHover = applyAlpha(new Color(208, 188, 255), 0.98f * appear);
+        Color labelColor = MD3Theme.lerp(
+                applyAlpha(new Color(230, 224, 233), 0.94f * appear),
+                applyAlpha(new Color(234, 221, 255), 0.98f * appear),
+                hover * 0.68f
+        );
+
+        scope.layer(0, layer -> {
+            layer.rect(drawX + layout.scale, buttonY + layout.scale, layout.buttonWidth + layout.scale * 0.5f,
+                    layout.buttonLineHeight + layout.scale, applyAlpha(MD3Theme.SURFACE, 0.70f * appear));
+            layer.rect(drawX, buttonY, layout.buttonWidth, layout.buttonLineHeight, MD3Theme.lerp(lineBase, lineHover, hover));
+        });
+        scope.layer(10, layer -> layer.text(localizedTitle(vanillaMenuEntry.title), drawX,
+                buttonY + layout.buttonTextOffsetY, layout.buttonTextScale, labelColor));
+    }
+
     private static String localizedTitle(String title) {
         return switch (title) {
             case "Singleplayer" -> EpsilonTranslations.Gui.MAINMENU_SINGLEPLAYER.getTranslatedName();
             case "Multiplayer" -> EpsilonTranslations.Gui.MAINMENU_MULTIPLAYER.getTranslatedName();
             case "Options" -> EpsilonTranslations.Gui.MAINMENU_OPTIONS.getTranslatedName();
             case "Quit" -> EpsilonTranslations.Gui.MAINMENU_QUIT.getTranslatedName();
+            case "VanillaMainMenu" -> EpsilonTranslations.Gui.MAINMENU_VANILLA.getTranslatedName();
             default -> title;
         };
     }
@@ -211,12 +270,16 @@ public class MainMenuScreen extends Screen {
     @Override
     public boolean mouseClicked(MouseButtonEvent event, boolean doubleClick) {
         if (event.button() == 0) {
+            MouseButtonEvent epsilonEvent = LuminRenderSystem.toEpsilonMouseEvent(event);
             for (MenuEntry entry : entries) {
-                MouseButtonEvent epsilonEvent = LuminRenderSystem.toEpsilonMouseEvent(event);
                 if (entry.isHovered(epsilonEvent.x(), epsilonEvent.y())) {
                     entry.action.run();
                     return true;
                 }
+            }
+            if (vanillaMenuEntry.isHovered(epsilonEvent.x(), epsilonEvent.y())) {
+                vanillaMenuEntry.action.run();
+                return true;
             }
         }
         return super.mouseClicked(LuminRenderSystem.toEpsilonMouseEvent(event), doubleClick);
