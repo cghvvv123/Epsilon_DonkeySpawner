@@ -132,6 +132,13 @@
         "all": "All",
         "available": "Available",
         "selected_header": "Selected"
+      },
+      "entity_category": {
+        "friendly": "Friendly",
+        "neutral": "Neutral",
+        "hostile": "Hostile",
+        "rideable": "Rideable",
+        "misc": "Misc"
       }
     },
     "elements": {
@@ -1247,6 +1254,65 @@
           "_value": "Queue Mode",
           "xin_2b2t": "2b2t.xin"
         }
+      },
+      "entity control": {
+        "_value": "Entity Control",
+        "control": "Control",
+        "entities": "Target Entities",
+        "spoof saddle": "Spoof Saddle",
+        "max jump": "Max Jump",
+        "cancel server packets": "Cancel Server Packets",
+        "control mode": {
+          "_value": "Control Mode",
+          "tradition": "Tradition",
+          "happyghast": "Happy Ghast"
+        },
+        "activation mode": {
+          "_value": "Activation Mode",
+          "immediate": "Immediate",
+          "doubletapspace": "Double Tap Space"
+        },
+        "activation message": "Activation Message",
+        "alert display mode": {
+          "_value": "Alert Display Mode",
+          "chat": "Chat",
+          "notification": "HUD Notification",
+          "both": "Chat & HUD"
+        },
+        "persistent until dismount": "Persistent Until Dismount",
+        "descend key": "Descend Key",
+        "speed": "Speed",
+        "horizontal speed": "Horizontal Speed",
+        "only on ground": "Only On Ground",
+        "in water": "In Water",
+        "flight": "Flight",
+        "fly": "Flight",
+        "vertical speed": "Vertical Speed",
+        "fall speed": "Natural Fall Speed",
+        "anti fly kick": "Anti Fly Kick",
+        "delay": "Delay",
+        "misc": "Misc",
+        "scale mount": "Scale Mount",
+        "mount scale": "Mount Scale",
+        "always scale mount": "Always Scale Mount",
+        "activated": "(Double tap space Mode)EntityControl ACTIVATED",
+        "deactivated": "(Double tap space Mode)EntityControl DEACTIVATED",
+        "deactivated_dismount": "(Double tap space Mode)EntityControl DEACTIVATED due to dismount"
+      },
+      "autopilot": {
+        "_value": "AutoPilot",
+        "mode": {
+          "_value": "Mode",
+          "simple": "Simple"
+        },
+        "cruise height": "Cruise Height",
+        "destination x": "Destination X",
+        "destination z": "Destination Z",
+        "reset destination": "Reset Coords",
+        "paste coords": "Paste Coords",
+        "toggle off on arrival": "Toggle Off On Arrival",
+        "pause in unloaded chunks": "Pause In Unloaded Chunks",
+        "player dodge": "Player Dodge"
       },
       "follower": {
         "_value": "Follower",

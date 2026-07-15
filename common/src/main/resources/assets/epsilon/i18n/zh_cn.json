@@ -132,6 +132,13 @@
         "all": "全部",
         "available": "可用",
         "selected_header": "已选"
+      },
+      "entity_category": {
+        "friendly": "友善",
+        "neutral": "中立",
+        "hostile": "敌对",
+        "rideable": "可骑乘",
+        "misc": "杂项"
       }
     },
     "elements": {
@@ -1247,6 +1254,65 @@
           "_value": "排队模式",
           "xin_2b2t": "2b2t.xin"
         }
+      },
+      "entity control": {
+        "_value": "实体控制",
+        "control": "控制",
+        "entities": "目标实体",
+        "spoof saddle": "假鞍",
+        "max jump": "保持最大跳跃",
+        "cancel server packets": "取消服务端移动包",
+        "control mode": {
+          "_value": "操控模式",
+          "tradition": "传统模式",
+          "happyghast": "快乐恶魂模式"
+        },
+        "activation mode": {
+          "_value": "激活模式",
+          "immediate": "立即生效",
+          "doubletapspace": "双击空格"
+        },
+        "activation message": "激活提示消息",
+        "alert display mode": {
+          "_value": "通知模式",
+          "chat": "聊天",
+          "notification": "HUD通知",
+          "both": "聊天和HUD"
+        },
+        "persistent until dismount": "持续直至主动下坐骑",
+        "descend key": "下降按键",
+        "speed": "速度",
+        "horizontal speed": "水平速度",
+        "only on ground": "仅地面",
+        "in water": "水中生效",
+        "flight": "飞行",
+        "fly": "飞行",
+        "vertical speed": "垂直速度",
+        "fall speed": "自然下落速度",
+        "anti fly kick": "防飞行踢出",
+        "delay": "延迟",
+        "misc": "杂项",
+        "scale mount": "缩放坐骑",
+        "mount scale": "缩放比例",
+        "always scale mount": "始终缩放坐骑",
+        "activated": "(双击空格模式)实体控制已激活",
+        "deactivated": "(双击空格模式)实体控制已关闭",
+        "deactivated_dismount": "(双击空格模式)实体控制因主动按SHIFT离开坐骑关闭"
+      },
+      "autopilot": {
+        "_value": "自动巡航",
+        "mode": {
+          "_value": "模式",
+          "simple": "简易"
+        },
+        "cruise height": "巡航高度",
+        "destination x": "目标X坐标",
+        "destination z": "目标Z坐标",
+        "reset destination": "重置坐标",
+        "paste coords": "粘贴坐标",
+        "toggle off on arrival": "到达目的地自动关闭",
+        "pause in unloaded chunks": "区块未加载暂停",
+        "player dodge": "规避玩家"
       },
       "follower": {
         "_value": "自动追人",

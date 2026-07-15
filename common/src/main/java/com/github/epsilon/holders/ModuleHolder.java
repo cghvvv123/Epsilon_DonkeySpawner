@@ -91,6 +91,8 @@ public class ModuleHolder {
 
         // Movement
         addModule(ElytraFly.INSTANCE);
+        addModule(EntityControl.INSTANCE);
+        addModule(AutoPilot.INSTANCE);
         addModule(Follower.INSTANCE);
         addModule(AutoSprint.INSTANCE);
         addModule(Blink.INSTANCE);
