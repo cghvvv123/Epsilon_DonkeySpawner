@@ -1515,6 +1515,7 @@
         "no water push": "No Water Push",
         "no entity push": "No Entity Push",
         "no block push": "No Block Push",
+        "exclude wind burst": "Exclude Mace Wind Burst",
         "exclude spear lunge": "Exclude Spear Lunge",
         "exclude wind charge": "Exclude Wind Charge"
       },

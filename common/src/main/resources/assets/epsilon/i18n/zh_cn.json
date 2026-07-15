@@ -1515,6 +1515,7 @@
         "no water push": "无水流推动",
         "no entity push": "无实体推动",
         "no block push": "无方块推动",
+        "exclude wind burst": "排除风暴附魔重锤",
         "exclude spear lunge": "排除突进附魔长矛",
         "exclude wind charge": "排除风弹"
       },
