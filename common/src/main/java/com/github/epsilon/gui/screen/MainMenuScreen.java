@@ -1,23 +1,24 @@
 package com.github.epsilon.gui.screen;
 
-import com.github.epsilon.Constants;
 import com.github.epsilon.assets.i18n.EpsilonTranslations;
+import com.github.epsilon.Constants;
 import com.github.epsilon.graphics.LuminRenderSystem;
 import com.github.epsilon.graphics.shaders.GlslSandBox;
 import com.github.epsilon.graphics.text.StaticFontLoader;
 import com.github.epsilon.gui.dropdown.DropdownScreen;
-import com.github.epsilon.gui.dsl.PanelUiTree;
-import com.github.epsilon.gui.panel.MD3Theme;
+import com.github.epsilon.gui.lib.scene.UiLayer;
+import com.github.epsilon.gui.lib.scene.UiScene;
+import com.github.epsilon.gui.lib.UiTree;
 import com.github.epsilon.gui.panel.PanelScreen;
-import com.github.epsilon.gui.scene.GuiLayer;
-import com.github.epsilon.gui.scene.GuiScene;
+import com.github.epsilon.gui.theme.EpsilonUiTheme;
+import com.github.epsilon.gui.theme.MD3Theme;
 import com.github.epsilon.modules.impl.ClientSetting;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
-import net.minecraft.client.gui.screens.Screen;
-import net.minecraft.client.gui.screens.TitleScreen;
 import net.minecraft.client.gui.screens.multiplayer.JoinMultiplayerScreen;
 import net.minecraft.client.gui.screens.multiplayer.SafetyScreen;
 import net.minecraft.client.gui.screens.options.OptionsScreen;
+import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.client.gui.screens.TitleScreen;
 import net.minecraft.client.gui.screens.worldselection.SelectWorldScreen;
 import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.network.chat.Component;
@@ -34,7 +35,7 @@ public class MainMenuScreen extends Screen {
 
     private static boolean skipVanillaMenuReplace;
 
-    private final GuiScene scene = new GuiScene();
+    private final UiScene scene = new UiScene(EpsilonUiTheme.INSTANCE);
 
     private final List<MenuEntry> entries = new ArrayList<>();
     private final MenuEntry vanillaMenuEntry;
@@ -146,7 +147,7 @@ public class MainMenuScreen extends Screen {
         float titleHeight = scene.scheduler().textMetrics().getHeight(layout.titleScale, StaticFontLoader.JURA_LIGHT);
         float subtitleY = layout.titleY + scene.scheduler().textMetrics().getHeight(layout.titleScale, StaticFontLoader.JURA_LIGHT) + layout.titleSubtitleGap;
 
-        PanelUiTree tree = PanelUiTree.build(scope -> {
+        UiTree tree = UiTree.build(scope -> {
             scope.layer(0, layer -> layer.rect(layout.titleX, layout.titleY + titleHeight + layout.titleAccentGap,
                     layout.titleAccentWidth, layout.titleAccentHeight, accentColor));
             scope.layer(10, layer -> {
@@ -159,10 +160,10 @@ public class MainMenuScreen extends Screen {
             buildVanillaMenuEntry(scope, mouseX, mouseY, introProgress, layout);
         });
 
-        scene.submit(GuiLayer.CONTENT, tree);
+        scene.submit(UiLayer.CONTENT, tree);
     }
 
-    private void buildEntry(PanelUiTree.Scope scope, MenuEntry entry, int index, int mouseX, int mouseY, float introProgress, Layout layout) {
+    private void buildEntry(UiTree.Scope scope, MenuEntry entry, int index, int mouseX, int mouseY, float introProgress, Layout layout) {
         float staged = Mth.clamp((introProgress - index * 0.08f) / 0.52f, 0.0f, 1.0f);
         float appear = easeOutCubic(staged);
         if (appear <= 0.001f) {
@@ -207,7 +208,7 @@ public class MainMenuScreen extends Screen {
         scope.layer(10, layer -> layer.text(localizedTitle(entry.title), drawX, textY, layout.buttonTextScale, labelColor));
     }
 
-    private void buildVanillaMenuEntry(PanelUiTree.Scope scope, int mouseX, int mouseY, float introProgress, Layout layout) {
+    private void buildVanillaMenuEntry(UiTree.Scope scope, int mouseX, int mouseY, float introProgress, Layout layout) {
         float appear = easeOutCubic(introProgress);
         if (appear <= 0.001f) {
             vanillaMenuEntry.setBounds(0.0f, 0.0f, 0.0f, 0.0f);
