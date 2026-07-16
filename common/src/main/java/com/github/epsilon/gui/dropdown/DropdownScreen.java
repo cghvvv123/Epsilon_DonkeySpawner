@@ -6,12 +6,12 @@ import com.github.epsilon.graphics.renderers.TextRenderer;
 import com.github.epsilon.graphics.text.ttf.TtfFontLoader;
 import com.github.epsilon.gui.dropdown.component.*;
 import com.github.epsilon.gui.dropdown.widget.DropdownTextField;
-import com.github.epsilon.gui.lib.render.UiRenderBatch;
-import com.github.epsilon.gui.lib.scene.UiLayer;
-import com.github.epsilon.gui.lib.scene.UiScene;
 import com.github.epsilon.gui.lib.UiRect;
 import com.github.epsilon.gui.lib.UiTextMetrics;
 import com.github.epsilon.gui.lib.UiTree;
+import com.github.epsilon.gui.lib.render.UiRenderBatch;
+import com.github.epsilon.gui.lib.scene.UiLayer;
+import com.github.epsilon.gui.lib.scene.UiScene;
 import com.github.epsilon.gui.panel.popup.PanelPopupHost;
 import com.github.epsilon.gui.panel.popup.RegistryListSelectPopup;
 import com.github.epsilon.gui.panel.popup.StringListSelectPopup;
@@ -25,8 +25,8 @@ import com.github.epsilon.settings.impl.StringListSetting;
 import com.github.epsilon.utils.render.animation.Animation;
 import com.github.epsilon.utils.render.animation.Easing;
 import com.mojang.blaze3d.platform.InputConstants;
-import net.minecraft.client.gui.components.IMEPreeditOverlay;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.client.gui.components.IMEPreeditOverlay;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.input.CharacterEvent;
 import net.minecraft.client.input.KeyEvent;
@@ -38,10 +38,10 @@ import org.lwjgl.glfw.GLFW;
 
 import java.awt.*;
 import java.util.ArrayList;
-import java.util.function.Consumer;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.function.Consumer;
 
 public class DropdownScreen extends Screen {
 
@@ -160,7 +160,7 @@ public class DropdownScreen extends Screen {
             float revealedH = panelH * intro;
 
             beginDropdownLayer();
-            withDropdownScissor(
+            withDropdownScissor(intro < 1.0f,
                     panel.getX() - shadowPad,
                     panel.getY() - shadowPad,
                     panel.getWidth() + shadowPad * 2,
@@ -176,7 +176,8 @@ public class DropdownScreen extends Screen {
                 beginDropdownLayer();
                 int hoverMouseX = panel == topmostHovered ? backgroundMouseX : -1;
                 int hoverMouseY = panel == topmostHovered ? backgroundMouseY : -1;
-                withDropdownScissor(panel.getX(), clipY, panel.getWidth(), actualClipH,
+                boolean requiresContentScissor = intro < 1.0f || panel.requiresContentScissor();
+                withDropdownScissor(requiresContentScissor, panel.getX(), clipY, panel.getWidth(), actualClipH,
                         scope -> panel.drawContent(scope, uiTextMetrics, hoverMouseX, hoverMouseY));
                 flushDropdownLayer();
             }
@@ -234,9 +235,9 @@ public class DropdownScreen extends Screen {
         dropdownBatch.render(UiTree.from(dropdownScope), dropdownLayer);
     }
 
-    private void withDropdownScissor(float guiX, float guiY, float guiW, float guiH,
+    private void withDropdownScissor(boolean required, float guiX, float guiY, float guiW, float guiH,
                                      Consumer<UiTree.Scope> content) {
-        dropdownScope.scissor(new UiRect(guiX, guiY, guiW, guiH), content);
+        dropdownScope.scissorIf(required, new UiRect(guiX, guiY, guiW, guiH), content);
     }
 
     private final class DropdownTextMetrics implements UiTextMetrics {

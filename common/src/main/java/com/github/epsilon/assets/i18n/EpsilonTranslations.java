@@ -17,6 +17,7 @@ public final class EpsilonTranslations {
             Module.VISIBLE,
             Module.HIDDEN,
             Module.FROM,
+            Module.STATE_PREFIX,
             Module.STATE_ENABLED,
             Module.STATE_DISABLED,
             Gui.SEARCH,
@@ -96,8 +97,6 @@ public final class EpsilonTranslations {
             Gui.ENTITY_CATEGORY_HOSTILE,
             Gui.ENTITY_CATEGORY_RIDEABLE,
             Gui.ENTITY_CATEGORY_MISC,
-            Notifications.ENABLED,
-            Notifications.DISABLED,
             ElytraFly.PITCH40_TAKEOFF_COMPLETE,
             ElytraFly.PITCH40_TOO_CLOSE_TO_LOWER_BOUNDS,
             ElytraFly.PITCH40_NO_USABLE_ELYTRA,
@@ -136,6 +135,7 @@ public final class EpsilonTranslations {
         public static final TranslateComponent VISIBLE = create("module", "visible");
         public static final TranslateComponent HIDDEN = create("module", "hidden");
         public static final TranslateComponent FROM = create("module", "from");
+        public static final TranslateComponent STATE_PREFIX = create("module", "state.prefix");
         public static final TranslateComponent STATE_ENABLED = create("module", "state.enabled");
         public static final TranslateComponent STATE_DISABLED = create("module", "state.disabled");
 
@@ -231,14 +231,6 @@ public final class EpsilonTranslations {
         public static final TranslateComponent ENTITY_CATEGORY_MISC = create("gui", "entity_category.misc");
 
         private Gui() {
-        }
-    }
-
-    public static final class Notifications {
-        public static final TranslateComponent ENABLED = create("elements.notifications hud", "enabled");
-        public static final TranslateComponent DISABLED = create("elements.notifications hud", "disabled");
-
-        private Notifications() {
         }
     }
 

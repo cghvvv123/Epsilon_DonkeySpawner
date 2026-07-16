@@ -5,15 +5,15 @@ import com.github.epsilon.graphics.LuminRenderSystem;
 import com.github.epsilon.graphics.renderers.TextRenderer;
 import com.github.epsilon.graphics.text.IconChars;
 import com.github.epsilon.graphics.text.ttf.TtfFontLoader;
-import com.github.epsilon.gui.dropdown.component.CategoryPanel;
 import com.github.epsilon.gui.dropdown.DropdownScreen;
 import com.github.epsilon.gui.dropdown.DropdownTheme;
-import com.github.epsilon.gui.lib.render.UiRenderBatch;
-import com.github.epsilon.gui.lib.scene.UiLayer;
-import com.github.epsilon.gui.lib.scene.UiScene;
+import com.github.epsilon.gui.dropdown.component.CategoryPanel;
 import com.github.epsilon.gui.lib.UiRect;
 import com.github.epsilon.gui.lib.UiTextMetrics;
 import com.github.epsilon.gui.lib.UiTree;
+import com.github.epsilon.gui.lib.render.UiRenderBatch;
+import com.github.epsilon.gui.lib.scene.UiLayer;
+import com.github.epsilon.gui.lib.scene.UiScene;
 import com.github.epsilon.gui.panel.PanelScreen;
 import com.github.epsilon.gui.theme.EpsilonUiTheme;
 import com.github.epsilon.gui.theme.MD3Theme;
@@ -29,8 +29,8 @@ import net.minecraft.network.chat.Component;
 import org.lwjgl.glfw.GLFW;
 
 import java.awt.*;
-import java.util.function.Consumer;
 import java.util.List;
+import java.util.function.Consumer;
 
 public class HudEditorScreen extends Screen {
 
@@ -176,7 +176,7 @@ public class HudEditorScreen extends Screen {
             float revealedH = panelH * intro;
 
             beginEditorLayer(10);
-            withEditorScissor(
+            withEditorScissor(intro < 1.0f,
                     hudPanel.getX() - shadowPad,
                     hudPanel.getY() - shadowPad,
                     hudPanel.getWidth() + shadowPad * 2.0f,
@@ -191,7 +191,8 @@ public class HudEditorScreen extends Screen {
             float actualClipH = Math.min(clipH, revealedBottom - clipY);
             if (actualClipH > 0.5f) {
                 beginEditorLayer(10);
-                withEditorScissor(hudPanel.getX(), clipY, hudPanel.getWidth(), actualClipH,
+                boolean requiresContentScissor = intro < 1.0f || hudPanel.requiresContentScissor();
+                withEditorScissor(requiresContentScissor, hudPanel.getX(), clipY, hudPanel.getWidth(), actualClipH,
                         scope -> hudPanel.drawContent(scope, uiTextMetrics, mouseX, mouseY));
                 flushEditorLayer();
             }
@@ -285,9 +286,9 @@ public class HudEditorScreen extends Screen {
         editorBatch.render(UiTree.from(editorScope), editorLayer);
     }
 
-    private void withEditorScissor(float guiX, float guiY, float guiW, float guiH,
+    private void withEditorScissor(boolean required, float guiX, float guiY, float guiW, float guiH,
                                    Consumer<UiTree.Scope> content) {
-        editorScope.scissor(new UiRect(guiX, guiY, guiW, guiH), content);
+        editorScope.scissorIf(required, new UiRect(guiX, guiY, guiW, guiH), content);
     }
 
     private final class EditorTextMetrics implements UiTextMetrics {

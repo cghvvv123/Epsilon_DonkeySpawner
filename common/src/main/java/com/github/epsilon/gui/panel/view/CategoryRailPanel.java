@@ -1,18 +1,18 @@
 package com.github.epsilon.gui.panel.view;
 
-import com.github.epsilon.assets.i18n.EpsilonTranslations;
 import com.github.epsilon.Constants;
+import com.github.epsilon.assets.i18n.EpsilonTranslations;
 import com.github.epsilon.graphics.renderers.TextRenderer;
 import com.github.epsilon.graphics.text.IconChars;
 import com.github.epsilon.graphics.text.StaticFontLoader;
-import com.github.epsilon.gui.lib.render.UiRenderBatch;
 import com.github.epsilon.gui.lib.UiRect;
 import com.github.epsilon.gui.lib.UiTree;
+import com.github.epsilon.gui.lib.render.UiRenderBatch;
 import com.github.epsilon.gui.panel.PanelState;
 import com.github.epsilon.gui.theme.MD3Theme;
 import com.github.epsilon.holders.ModuleHolder;
-import com.github.epsilon.managers.impl.sound.SoundKey;
 import com.github.epsilon.managers.Managers;
+import com.github.epsilon.managers.impl.sound.SoundKey;
 import com.github.epsilon.modules.Category;
 import com.github.epsilon.utils.render.animation.Animation;
 import com.github.epsilon.utils.render.animation.Easing;
@@ -67,7 +67,11 @@ public class CategoryRailPanel {
 
     public void render(GuiGraphicsExtractor GuiGraphicsExtractor, UiRenderBatch renderBatch, UiRect bounds, int mouseX, int mouseY, float partialTick) {
         this.bounds = bounds;
-        UiTree tree = UiTree.build(root -> root.scissor(bounds, scope -> {
+        float targetWidth = state.isSidebarExpanded() ? MD3Theme.RAIL_EXPANDED_WIDTH : MD3Theme.RAIL_COLLAPSED_WIDTH;
+        float targetContent = state.isSidebarExpanded() ? 1.0f : 0.0f;
+        boolean requiresScissor = Math.abs(bounds.width() - targetWidth) > 0.001f
+                || Math.abs(contentAnimation.getValue() - targetContent) > 0.001f;
+        UiTree tree = UiTree.build(root -> root.scissorIf(requiresScissor, bounds, scope -> {
             float contentProgress = scope.animate(contentAnimation, state.isSidebarExpanded());
             float titleProgress = scope.animate(headerTitleAnimation, contentProgress);
             float subtitleProgress = scope.animate(headerSubtitleAnimation, contentProgress > 0.08f);
