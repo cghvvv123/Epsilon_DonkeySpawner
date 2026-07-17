@@ -100,6 +100,12 @@ public final class EpsilonTranslations {
             ElytraFly.PITCH40_TAKEOFF_COMPLETE,
             ElytraFly.PITCH40_TOO_CLOSE_TO_LOWER_BOUNDS,
             ElytraFly.PITCH40_NO_USABLE_ELYTRA,
+            ElytraSwap.NO_USABLE_REPLACEMENT,
+            ElytraSwap.REPLACED_LOW_DURABILITY,
+            ElytraSwap.DURABILITY_LOW,
+            ElytraSwap.EMERGENCY_ENABLED,
+            ElytraSwap.EMERGENCY_DISABLED,
+            AutoPilot.WRONG_FLIGHT_MODE,
             PlayerAlarms.JOIN_ALERT_TEXT,
             PlayerAlarms.LEAVE_ALERT_TEXT,
             PlayerAlarms.ENTER_RD_ALERT_TEXT,
@@ -240,6 +246,24 @@ public final class EpsilonTranslations {
         public static final TranslateComponent PITCH40_NO_USABLE_ELYTRA = create("modules.elytra fly", "pitch40_no_usable_elytra");
 
         private ElytraFly() {
+        }
+    }
+
+    public static final class ElytraSwap {
+        public static final TranslateComponent NO_USABLE_REPLACEMENT = create("modules.elytra swap", "no_usable_replacement");
+        public static final TranslateComponent REPLACED_LOW_DURABILITY = create("modules.elytra swap", "replaced_low_durability");
+        public static final TranslateComponent DURABILITY_LOW = create("modules.elytra swap", "durability_low");
+        public static final TranslateComponent EMERGENCY_ENABLED = create("modules.elytra swap", "emergency_enabled");
+        public static final TranslateComponent EMERGENCY_DISABLED = create("modules.elytra swap", "emergency_disabled");
+
+        private ElytraSwap() {
+        }
+    }
+
+    public static final class AutoPilot {
+        public static final TranslateComponent WRONG_FLIGHT_MODE = create("modules.autopilot", "wrong_flight_mode");
+
+        private AutoPilot() {
         }
     }
 

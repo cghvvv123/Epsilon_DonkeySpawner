@@ -8,6 +8,7 @@ import com.github.epsilon.gui.panel.PanelScreen;
 import com.github.epsilon.modules.Category;
 import com.github.epsilon.modules.Module;
 import com.github.epsilon.modules.impl.movement.elytrafly.ElytraFly;
+import com.github.epsilon.modules.impl.movement.elytrafly.ElytraFlightModes;
 import com.github.epsilon.settings.impl.BoolSetting;
 import com.github.epsilon.settings.impl.EnumSetting;
 import com.github.epsilon.settings.impl.IntSetting;
@@ -60,6 +61,13 @@ public class AutoArmor extends Module {
     private final BoolSetting ignoreCurse = boolSetting("Ignore Curse", true);
     private final BoolSetting strict = boolSetting("Strict", false);
 
+    public boolean isElytraPlusActive() {
+        return isEnabled()
+                && elytraPriority.is(ElytraPriority.ElytraPlus)
+                && ElytraFly.INSTANCE.isEnabled()
+                && !ElytraFly.INSTANCE.isArmorMode();
+    }
+
     private int tickDelay;
 
     private final List<ArmorData> armorList = List.of(
@@ -72,6 +80,7 @@ public class AutoArmor extends Module {
     @EventHandler
     private void onClientTick(ClientTickEvent.Pre event) {
         if (nullCheck()) return;
+        if (ElytraSwap.INSTANCE.isWaitingForFlightLanding()) return;
 
         if (
                 mc.screen != null
@@ -165,11 +174,16 @@ public class AutoArmor extends Module {
         int enchantmentScore = 0;
 
         if (elytra) {
-            if (!LivingEntity.canGlideUsing(stack, slot)) return 0;
+            if (!LivingEntity.canGlideUsing(stack, slot)
+                    || stack.getMaxDamage() - stack.getDamageValue() <= 1) return 0;
 
+            // ElytraPlus 由 ElytraSwap 控制起飞时机；仅开启 ElytraFly 时不要立即把背包鞘翅换上。
+            // 只有实际处于空中或滑翔状态时保持鞘翅优先，落地站立后允许换回胸甲。
             boolean elytraFlyActive = elytraPriority.is(ElytraPriority.ElytraPlus)
                     && ElytraFly.INSTANCE.isEnabled()
-                    && !ElytraFly.INSTANCE.isArmorMode();
+                    && !ElytraFly.INSTANCE.isArmorMode()
+                    && (mc.player.isFallFlying()
+                    || (!mc.player.onGround() && !mc.player.isPassenger()));
             boolean preserveEquippedElytra = elytraPriority.is(ElytraPriority.Ignore)
                     && mc.player.getItemBySlot(EquipmentSlot.CHEST).has(DataComponents.GLIDER);
 

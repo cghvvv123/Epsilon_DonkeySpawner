@@ -4,6 +4,7 @@ import com.github.epsilon.events.impl.FallFlyingEvent;
 import com.github.epsilon.events.impl.FireworkRotationEvent;
 import com.github.epsilon.events.impl.KeyboardInputEvent;
 import com.github.epsilon.events.impl.TravelEvent;
+import com.github.epsilon.modules.impl.player.ElytraSwap;
 import com.github.epsilon.utils.player.ClickSlotUtils;
 import com.github.epsilon.utils.player.FindItemResult;
 import com.github.epsilon.utils.player.InvUtils;
@@ -56,14 +57,26 @@ public abstract class ElytraFlightMode {
         unbreakingTimer.setMs(917813L);
     }
 
+    public void resetUnbreakingTimer() {
+        unbreakingTimer.reset();
+    }
+
     public void handleUnbreaking() {
         if (!elytraFly.unbreaking.getValue()) return;
-        if (mc.screen != null) return;
+        if (ElytraSwap.INSTANCE.isEmergencyActive()) return;
+        if (!elytraFly.shouldResetUnbreaking()) return;
+        if (!elytraFly.unbreakingInGui.getValue() && mc.screen != null) return;
         if (!mc.player.isFallFlying() || mc.player.onGround()) return;
+        // 只有玩家背包菜单的槽位布局包含胸甲槽 6，外部容器界面不能复用该点击流程。
+        if (mc.player.containerMenu != mc.player.inventoryMenu) return;
         if (!unbreakingTimer.passedMillise(elytraFly.unbreakingDelay.getValue())) return;
 
         ItemStack chestStack = mc.player.getItemBySlot(EquipmentSlot.CHEST);
         if (!LivingEntity.canGlideUsing(chestStack, EquipmentSlot.CHEST)) return;
+
+        if (elytraFly.mode.is(ElytraFlightModes.NCPControl)) {
+            ((NCPControlElytraFlightMode) elytraFly.getActiveMode()).lockGravityForUnbreaking();
+        }
 
         int containerId = mc.player.containerMenu.containerId;
         ClickSlotUtils.click(containerId, 6);
@@ -108,6 +121,12 @@ public abstract class ElytraFlightMode {
         if (!rocket.found()) return false;
 
         InteractionHand hand = rocket.getHand();
+
+        if (hand == InteractionHand.OFF_HAND) {
+            InteractionResult result = mc.gameMode.useItem(mc.player, hand);
+            if (result.consumesAction()) mc.player.swing(hand);
+            return result.consumesAction();
+        }
 
         if (elytraFly.swapMode.is(ElytraFly.SwapMode.Silent)) {
             InvUtils.swap(rocket.slot(), true);

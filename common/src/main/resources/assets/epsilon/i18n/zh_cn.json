@@ -144,6 +144,25 @@
     },
     "modules": {
       "elytra fly": {
+        "takeoff": "起飞",
+        "speed": "速度",
+        "up speed": "上升速度",
+        "down speed": "下降速度",
+        "rise min speed": "上升最低速度",
+        "rise pitch": "上升角度",
+        "water speed": "水中速度",
+        "water up speed": "水中上升速度",
+        "water down speed": "水中下降速度",
+        "water rise min speed": "水中上升最低速度",
+        "water rise pitch": "水中上升角度",
+        "water yaw speed offset": "水中偏航偏移速度",
+        "potion handler": "药水处理",
+        "potion speed": "速度药水",
+        "speed potion multiplier": "速度药水倍率",
+        "slowness potion": "缓慢药水",
+        "slowness potion multiplier": "缓慢药水倍率",
+        "yaw velocity": "偏航速度",
+        "easy takeoff": "简易起飞",
         "_value": "鞘翅飞行",
         "pitch40_takeoff_complete": "Pitch40 起飞完成",
         "pitch40_too_close_to_lower_bounds": "玩家必须至少高于下界高度 40 格！",
@@ -151,19 +170,25 @@
         "mode": {
           "_value": "模式",
           "control": "控制",
-          "pitch40": "Pitch 40"
+          "pitch40": "Pitch 40",
+          "ncpcontrol": "NCP控制"
         },
         "swap mode": {
           "_value": "切换模式",
-          "silent": "静默",
+          "silent": "快捷栏",
           "invswitch": "背包切换"
         },
         "armored": "穿甲",
         "unbreaking": "无限耐久",
         "unbreaking delay": "无限耐久延迟",
+        "unbreaking in gui": "GUI中无限耐久",
         "no sprint": "禁止疾跑",
         "use fireworks": "使用烟花",
         "boost delay": "加速延迟",
+        "vertical multiple": "垂直加速倍率",
+        "vertical max speed": "垂直最大速度",
+        "check feet": "检查脚下",
+        "check feet height": "脚下检查距离",
         "pitch40 lower bounds": "Pitch40 下界高度",
         "pitch40 rotate speed up": "Pitch40 上仰速度",
         "pitch40 rotate speed down": "Pitch40 下压速度",
@@ -171,7 +196,18 @@
         "pitch40 auto takeoff": "Pitch40 自动起飞",
         "pitch40 takeoff target height": "Pitch40 起飞目标高度",
         "pitch40 auto firework": "Pitch40 起飞烟花",
-        "pitch40 firework cooldown": "Pitch40 烟花冷却"
+        "pitch40 firework cooldown": "Pitch40 烟花冷却",
+        "smart inf elytra": "智能无限鞘翅",
+        "only when afk": "仅挂机时",
+        "direction time": "方向稳定时间(Tick)",
+        "only when steady": "仅静止时",
+        "direction tolerance": "方向容差",
+        "horizontal tolerance": "水平容差",
+        "vertical tolerance": "垂直容差",
+        "exclude descending": "排除下降",
+        "only when above clear": "仅上下方畅通时",
+        "above clear tolerance": "上方检查范围",
+        "below clear tolerance": "下方检查范围"
       },
       "player alarms": {
         "_value": "玩家警报",
@@ -900,6 +936,14 @@
         "villagers": "村民",
         "invisible": "隐身"
       },
+      "trident elytra": {
+        "_value": "三叉戟鞘翅",
+        "general": "常规",
+        "auto equip elytra": "自动装备鞘翅",
+        "handoff speed": "交接速度",
+        "handoff on move": "移动时交接",
+        "disable gravity": "激流期间禁用重力"
+      },
       "trigger bot": {
         "_value": "自动攻击",
         "range": "范围",
@@ -979,13 +1023,47 @@
         "input": "输入"
       },
       "elytra swap": {
+        "mode": {
+          "_value": "模式",
+          "manual": "手动",
+          "auto": "自动"
+        },
+        "general": "通用",
+        "auto": "自动",
+        "auto replace": "自动替换",
+        "replace threshold": "替换阈值",
+        "emergency hover": "紧急悬停",
+        "low durability warning": "低耐久提醒",
+        "warning threshold": "提醒阈值",
+        "only when last elytra": "仅剩最后一个鞘翅时提醒",
+        "no_usable_replacement": "没有可用的替换鞘翅",
+        "replaced_low_durability": "已替换低耐久鞘翅",
+        "durability_low": "鞘翅耐久过低：{durability}",
+        "emergency_enabled": "没有可用鞘翅，已启用紧急卡空",
+        "emergency_disabled": "紧急卡空已关闭",
+        "notification channel": {
+          "_value": "通知渠道",
+          "chat": "聊天栏",
+          "hud": "HUD",
+          "both": "两者"
+        },
         "_value": "鞘翅切换",
         "activate key": "激活按键",
         "delay": "延迟",
         "switch back": "切换回来",
         "switch delay": "切换延迟",
         "move to slot": "移动到槽位",
-        "elytra slot": "鞘翅槽位"
+        "elytra slot": "鞘翅槽位",
+        "elytra priority": {
+          "_value": "鞘翅优先级",
+          "highqualityfirst": "高质量优先",
+          "lowqualityfirst": "低质量优先"
+        },
+        "swap back immediately": "立即换回",
+        "only when holding a mace": "仅手持重锤时",
+        "low durability warning": "低耐久警告",
+        "warning threshold": "警告阈值",
+        "only when last elytra": "仅剩最后一件鞘翅时警告"
       },
       "fake player": {
         "_value": "假人",
@@ -1144,7 +1222,8 @@
         "paste coords": "粘贴坐标",
         "toggle off on arrival": "到达目的地自动关闭",
         "pause in unloaded chunks": "区块未加载暂停",
-        "player dodge": "规避玩家"
+        "player dodge": "规避玩家",
+        "wrong_flight_mode": "自动巡航仅控制 ElytraFly 的 NCPControl 模式"
       },
       "follower": {
         "_value": "自动追人",

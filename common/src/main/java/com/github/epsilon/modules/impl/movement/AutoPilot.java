@@ -3,8 +3,13 @@ package com.github.epsilon.modules.impl.movement;
 import com.github.epsilon.events.bus.EventHandler;
 import com.github.epsilon.events.bus.EventPriority;
 import com.github.epsilon.events.impl.EntityMoveEvent;
+import com.github.epsilon.events.impl.PlayerTickEvent;
+import com.github.epsilon.assets.i18n.EpsilonTranslations;
+import com.github.epsilon.managers.Managers;
 import com.github.epsilon.modules.Category;
 import com.github.epsilon.modules.Module;
+import com.github.epsilon.modules.impl.movement.elytrafly.ElytraFlightModes;
+import com.github.epsilon.modules.impl.movement.elytrafly.ElytraFly;
 import com.github.epsilon.settings.impl.BoolSetting;
 import com.github.epsilon.settings.impl.ButtonSetting;
 import com.github.epsilon.settings.impl.EnumSetting;
@@ -43,8 +48,48 @@ public class AutoPilot extends Module {
     private final BoolSetting pauseInUnloadedChunks = boolSetting("Pause In Unloaded Chunks", false);
     private final BoolSetting playerDodge = boolSetting("Player Dodge", false);
 
+    private boolean warnedWrongFlightMode;
+
     private AutoPilot() {
         super("AutoPilot", Category.MOVEMENT);
+    }
+
+    @Override
+    protected void onEnable() {
+        warnedWrongFlightMode = false;
+    }
+
+    @Override
+    protected void onDisable() {
+        warnedWrongFlightMode = false;
+    }
+
+    public float getCruiseYaw() {
+        if (!isEnabled()) return AutoPilotUtil.INACTIVE_YAW;
+        if (!isNcpControlAvailable()) {
+            warnWrongFlightMode();
+            return AutoPilotUtil.INACTIVE_YAW;
+        }
+        // 鞘翅巡航只允许在实际滑翔时生效，乘坐实体时不向鞘翅控制注入航向。
+        if (mc.player == null || mc.player.isPassenger() || !mc.player.isFallFlying()) {
+            return AutoPilotUtil.INACTIVE_YAW;
+        }
+        return AutoPilotUtil.calcAutoMoveYaw(
+                destinationX.getValue(),
+                destinationZ.getValue(),
+                cruiseHeight.getValue(),
+                playerDodge.getValue()
+        );
+    }
+
+    private boolean isNcpControlAvailable() {
+        return ElytraFly.INSTANCE.isEnabled() && ElytraFly.INSTANCE.mode.is(ElytraFlightModes.NCPControl);
+    }
+
+    private void warnWrongFlightMode() {
+        if (warnedWrongFlightMode) return;
+        warnedWrongFlightMode = true;
+        Managers.NOTIFICATION.error(getTranslatedName(), EpsilonTranslations.AutoPilot.WRONG_FLIGHT_MODE.getTranslatedName());
     }
 
     @EventHandler(priority = EventPriority.LOW)
@@ -56,6 +101,16 @@ public class AutoPilot extends Module {
 
         switch (mode.getValue()) {
             case Simple -> runSimpleMode(event, entityControl);
+        }
+    }
+
+    @EventHandler
+    private void onPlayerTick(PlayerTickEvent.Pre event) {
+        if (nullCheck() || !ElytraFly.INSTANCE.isEnabled() || !mc.player.isFallFlying()) return;
+        if (ElytraFly.INSTANCE.mode.is(ElytraFlightModes.NCPControl)) {
+            warnedWrongFlightMode = false;
+        } else {
+            warnWrongFlightMode();
         }
     }
 

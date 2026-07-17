@@ -49,7 +49,7 @@ public class InvUtils {
     }
 
     public static FindItemResult find(Predicate<ItemStack> isGood) {
-        return find(isGood, 0, mc.player.getInventory().getContainerSize());
+        return find(isGood, 0, mc.player.getInventory().getContainerSize() - 1);
     }
 
     public static FindItemResult find(Predicate<ItemStack> isGood, int start, int end) {

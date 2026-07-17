@@ -145,25 +145,32 @@
     "modules": {
       "elytra fly": {
         "_value": "Elytra Fly",
+        "takeoff": "Takeoff",
         "pitch40_takeoff_complete": "Pitch40 takeoff complete",
         "pitch40_too_close_to_lower_bounds": "Player must be at least 40 blocks above the lower bounds!",
         "pitch40_no_usable_elytra": "No usable elytra found for takeoff!",
         "mode": {
           "_value": "Mode",
           "control": "Control",
-          "pitch40": "Pitch 40"
+          "pitch40": "Pitch 40",
+          "ncpcontrol": "NCP Control"
         },
         "swap mode": {
           "_value": "Swap Mode",
-          "silent": "Silent",
+          "silent": "Hotbar",
           "invswitch": "Inv Switch"
         },
         "armored": "Armored",
         "unbreaking": "Unbreaking",
         "unbreaking delay": "Unbreaking Delay",
+        "unbreaking in gui": "Unbreaking In GUI",
         "no sprint": "No Sprint",
         "use fireworks": "Use Fireworks",
         "boost delay": "Boost Delay",
+        "vertical multiple": "Vertical Multiple",
+        "vertical max speed": "Vertical Max Speed",
+        "check feet": "Check Feet",
+        "check feet height": "Check Feet Height",
         "pitch40 lower bounds": "Pitch40 Lower Bounds",
         "pitch40 rotate speed up": "Pitch40 Rotate Speed Up",
         "pitch40 rotate speed down": "Pitch40 Rotate Speed Down",
@@ -171,7 +178,36 @@
         "pitch40 auto takeoff": "Pitch40 Auto Takeoff",
         "pitch40 takeoff target height": "Pitch40 Takeoff Target Height",
         "pitch40 auto firework": "Pitch40 Takeoff Firework",
-        "pitch40 firework cooldown": "Pitch40 Firework Cooldown"
+        "pitch40 firework cooldown": "Pitch40 Firework Cooldown",
+        "speed": "Speed",
+        "up speed": "Up Speed",
+        "down speed": "Down Speed",
+        "rise min speed": "Rise Min Speed",
+        "rise pitch": "Rise Pitch",
+        "water speed": "Water Speed",
+        "water up speed": "Water Up Speed",
+        "water down speed": "Water Down Speed",
+        "water rise min speed": "Water Rise Min Speed",
+        "water rise pitch": "Water Rise Pitch",
+        "water yaw speed offset": "Water Yaw Speed Offset",
+        "potion handler": "Potion Handler",
+        "potion speed": "Potion Speed",
+        "speed potion multiplier": "Speed Potion Multiplier",
+        "slowness potion": "Slowness Potion",
+        "slowness potion multiplier": "Slowness Potion Multiplier",
+        "yaw velocity": "Yaw Velocity",
+        "easy takeoff": "Easy Takeoff",
+        "smart inf elytra": "Smart Inf Elytra",
+        "only when afk": "Only When AFK",
+        "direction time": "Direction Time(Tick)",
+        "only when steady": "Only When Steady",
+        "direction tolerance": "Direction Tolerance",
+        "horizontal tolerance": "Horizontal Tolerance",
+        "vertical tolerance": "Vertical Tolerance",
+        "exclude descending": "Exclude Descending",
+        "only when above clear": "Only When Above Clear",
+        "above clear tolerance": "Above Clear Tolerance",
+        "below clear tolerance": "Below Clear Tolerance"
       },
       "player alarms": {
         "_value": "Player Alarms",
@@ -900,6 +936,14 @@
         "villagers": "Villagers",
         "invisible": "Invisible"
       },
+      "trident elytra": {
+        "_value": "Trident Elytra",
+        "general": "General",
+        "auto equip elytra": "Auto Equip Elytra",
+        "handoff speed": "Handoff Speed",
+        "handoff on move": "Handoff On Move",
+        "disable gravity": "Disable Gravity"
+      },
       "trigger bot": {
         "_value": "Trigger Bot",
         "range": "Range",
@@ -980,12 +1024,43 @@
       },
       "elytra swap": {
         "_value": "Elytra Swap",
+        "mode": {
+          "_value": "Mode",
+          "manual": "Manual",
+          "auto": "Auto"
+        },
+        "general": "General",
+        "auto": "Auto",
         "activate key": "Activate Key",
         "delay": "Delay",
         "switch back": "Switch Back",
         "switch delay": "Switch Delay",
         "move to slot": "Move To Slot",
-        "elytra slot": "Elytra Slot"
+        "elytra slot": "Elytra Slot",
+        "auto replace": "Auto Replace",
+        "replace threshold": "Replace Threshold",
+        "emergency hover": "Emergency Hover",
+        "elytra priority": {
+          "_value": "Elytra Priority",
+          "highqualityfirst": "High Quality First",
+          "lowqualityfirst": "Low Quality First"
+        },
+        "swap back immediately": "Swap Back Immediately",
+        "only when holding a mace": "Only When Holding a Mace",
+        "low durability warning": "Low Durability Warning",
+        "warning threshold": "Warning Threshold",
+        "only when last elytra": "Only When Last Elytra",
+        "notification channel": {
+          "_value": "Notification Channel",
+          "chat": "Chat",
+          "hud": "HUD",
+          "both": "Both"
+        },
+        "no_usable_replacement": "No usable replacement elytra",
+        "replaced_low_durability": "Replaced low durability elytra",
+        "durability_low": "Elytra durability low: {durability}",
+        "emergency_enabled": "No usable elytra, emergency hover enabled",
+        "emergency_disabled": "Emergency hover disabled"
       },
       "fake player": {
         "_value": "Fake Player",
@@ -1144,7 +1219,8 @@
         "paste coords": "Paste Coords",
         "toggle off on arrival": "Toggle Off On Arrival",
         "pause in unloaded chunks": "Pause In Unloaded Chunks",
-        "player dodge": "Player Dodge"
+        "player dodge": "Player Dodge",
+        "wrong_flight_mode": "AutoPilot only controls ElytraFly NCPControl mode"
       },
       "follower": {
         "_value": "Follower",

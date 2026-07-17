@@ -456,12 +456,9 @@ public class TtfTextRenderer implements ITextRenderer {
             buffer.ensureCapacity(requiredBytes);
 
             // 同一 atlas run 只映射一次，后续 glyph 直接顺序写入 mapped memory。
-            if (!buffer.isMapped()) {
-                buffer.tryMap();
-                mappedAddress = MemoryUtil.memAddress(buffer.getMappedBuffer());
-            } else if (mappedAddress == 0L) {
-                mappedAddress = MemoryUtil.memAddress(buffer.getMappedBuffer());
-            }
+            if (!buffer.isMapped()) buffer.tryMap();
+            // 扩容会重新映射当前槽位，不能继续使用扩容前缓存的本地地址。
+            mappedAddress = MemoryUtil.memAddress(buffer.getMappedBuffer());
 
             offsetInAtlas = requiredBytes;
             return mappedAddress + start;
