@@ -14,7 +14,6 @@ import net.minecraft.core.component.DataComponents;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.Items;
 import org.lwjgl.glfw.GLFW;
 
 import java.util.function.Predicate;
@@ -70,7 +69,7 @@ public class ElytraSwap extends Module {
             }
 
 
-            boolean wearingElytra = mc.player.getItemBySlot(EquipmentSlot.CHEST).is(Items.ELYTRA);
+            boolean wearingElytra = mc.player.getItemBySlot(EquipmentSlot.CHEST).has(DataComponents.GLIDER);
 
 
             Predicate<ItemStack> predicate = wearingElytra ?
@@ -79,7 +78,7 @@ public class ElytraSwap extends Module {
                         var equippable = stack.get(DataComponents.EQUIPPABLE);
                         return equippable != null && equippable.slot() == EquipmentSlot.CHEST;
                     } :
-                    stack -> stack.is(Items.ELYTRA);
+                    stack -> stack.has(DataComponents.GLIDER);
             if (!this.isItemSwapped) {
                 int targetSlot = InvUtils.findInHotbar(predicate).slot();
 

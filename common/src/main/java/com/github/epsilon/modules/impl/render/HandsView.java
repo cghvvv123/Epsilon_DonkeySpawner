@@ -8,6 +8,7 @@ import com.github.epsilon.settings.impl.EnumSetting;
 import com.github.epsilon.settings.impl.IntSetting;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.math.Axis;
+import net.minecraft.core.component.DataComponents;
 import net.minecraft.tags.ItemTags;
 import net.minecraft.util.Mth;
 import net.minecraft.world.InteractionHand;
@@ -15,7 +16,6 @@ import net.minecraft.world.entity.Avatar;
 import net.minecraft.world.entity.HumanoidArm;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.ItemUseAnimation;
-import net.minecraft.world.item.Items;
 
 public class HandsView extends Module {
 
@@ -77,7 +77,7 @@ public class HandsView extends Module {
     }
 
     private boolean isOffhandBlocking() {
-        if (!mc.options.keyUse.isDown() || !mc.player.getOffhandItem().is(Items.SHIELD)) {
+        if (!mc.options.keyUse.isDown() || !mc.player.getOffhandItem().has(DataComponents.BLOCKS_ATTACKS)) {
             return false;
         }
         return !mc.player.isUsingItem() ? mc.player.getMainHandItem().getUseAnimation() == ItemUseAnimation.NONE : mc.player.getUsedItemHand() == InteractionHand.OFF_HAND;

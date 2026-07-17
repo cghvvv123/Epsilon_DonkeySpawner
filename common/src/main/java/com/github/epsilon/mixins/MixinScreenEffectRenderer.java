@@ -6,8 +6,8 @@ import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.ScreenEffectRenderer;
 import net.minecraft.client.renderer.SubmitNodeCollector;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
+import net.minecraft.core.component.DataComponents;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.Items;
 import org.jspecify.annotations.Nullable;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
@@ -40,7 +40,7 @@ public class MixinScreenEffectRenderer {
         if (NoRender.INSTANCE.isEnabled()
                 && NoRender.INSTANCE.totemAnimation.getValue()
                 && itemActivationItem != null
-                && itemActivationItem.is(Items.TOTEM_OF_UNDYING)) {
+                && itemActivationItem.has(DataComponents.DEATH_PROTECTION)) {
             ci.cancel();
         }
     }

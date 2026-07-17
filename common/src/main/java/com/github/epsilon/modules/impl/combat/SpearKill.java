@@ -11,9 +11,10 @@ import com.github.epsilon.settings.impl.DoubleSetting;
 import com.github.epsilon.settings.impl.EnumSetting;
 import com.github.epsilon.settings.impl.IntSetting;
 import com.github.epsilon.utils.rotation.RotationUtils;
+import net.minecraft.core.component.DataComponents;
 import net.minecraft.world.entity.LivingEntity;
-import net.minecraft.world.item.Item;
-import net.minecraft.world.item.Items;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.component.KineticWeapon;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 
@@ -126,22 +127,12 @@ public class SpearKill extends Module {
 
     private boolean isUsingSpear() {
         if (mc.player == null) return false;
-        Item item = mc.player.getUseItem().getItem();
-        return item == Items.WOODEN_SPEAR || item == Items.STONE_SPEAR || item == Items.COPPER_SPEAR
-                || item == Items.IRON_SPEAR || item == Items.GOLDEN_SPEAR || item == Items.DIAMOND_SPEAR
-                || item == Items.NETHERITE_SPEAR;
+        return mc.player.getUseItem().has(DataComponents.KINETIC_WEAPON);
     }
 
-    private int getReadyTicks(Item item) {
-        int value;
-
-        if (item == Items.WOODEN_SPEAR) value = 14;
-        else if (item == Items.STONE_SPEAR || item == Items.GOLDEN_SPEAR) value = 13;
-        else if (item == Items.COPPER_SPEAR) value = 12;
-        else if (item == Items.IRON_SPEAR) value = 11;
-        else if (item == Items.DIAMOND_SPEAR) value = 9;
-        else if (item == Items.NETHERITE_SPEAR) value = 7;
-        else value = 10;
+    private int getReadyTicks(ItemStack stack) {
+        KineticWeapon kineticWeapon = stack.get(DataComponents.KINETIC_WEAPON);
+        int value = kineticWeapon == null ? 10 : Math.max(0, kineticWeapon.delayTicks() - 1);
 
         return Math.round(value * (chargeTimeModifier.getValue() / 100.0f));
     }
@@ -149,7 +140,7 @@ public class SpearKill extends Module {
     private void lunge() {
         if (killtarget == null) return;
 
-        int readyTicks = getReadyTicks(mc.player.getUseItem().getItem());
+        int readyTicks = getReadyTicks(mc.player.getUseItem());
 
         if (rotate.getValue() && killtarget != null) {
             rotateToTarget(killtarget);

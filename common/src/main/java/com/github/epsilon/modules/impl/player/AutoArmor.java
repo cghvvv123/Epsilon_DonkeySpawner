@@ -23,7 +23,6 @@ import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.Items;
 import net.minecraft.world.item.enchantment.Enchantments;
 import net.minecraft.world.item.equipment.Equippable;
 
@@ -162,7 +161,7 @@ public class AutoArmor extends Module {
         EquipmentSlot slot = getEquipmentSlot(stack);
         if (slot == null) return 0;
 
-        boolean elytra = stack.is(Items.ELYTRA);
+        boolean elytra = stack.has(DataComponents.GLIDER);
         int enchantmentScore = 0;
 
         if (elytra) {
@@ -172,7 +171,7 @@ public class AutoArmor extends Module {
                     && ElytraFly.INSTANCE.isEnabled()
                     && !ElytraFly.INSTANCE.isArmorMode();
             boolean preserveEquippedElytra = elytraPriority.is(ElytraPriority.Ignore)
-                    && mc.player.getItemBySlot(EquipmentSlot.CHEST).is(Items.ELYTRA);
+                    && mc.player.getItemBySlot(EquipmentSlot.CHEST).has(DataComponents.GLIDER);
 
             if (elytraFlyActive || preserveEquippedElytra || elytraPriority.is(ElytraPriority.Always)) {
                 enchantmentScore = 999;

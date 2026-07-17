@@ -8,6 +8,7 @@ import com.github.epsilon.settings.impl.BoolSetting;
 import com.github.epsilon.settings.impl.DoubleSetting;
 import com.github.epsilon.utils.player.ClickSlotUtils;
 import com.github.epsilon.utils.player.InvHelper;
+import net.minecraft.core.component.DataComponents;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.Items;
 
@@ -26,7 +27,7 @@ public class AutoTotem extends Module {
     @Override
     public String getInfo() {
         if (nullCheck()) return null;
-        return String.valueOf(InvHelper.getItemCount(Items.TOTEM_OF_UNDYING));
+        return String.valueOf(InvHelper.getItemCount(stack -> stack.has(DataComponents.DEATH_PROTECTION)));
     }
 
     @EventHandler
@@ -37,11 +38,11 @@ public class AutoTotem extends Module {
             return;
         }
 
-        if (mc.player.getOffhandItem().is(Items.TOTEM_OF_UNDYING)) {
+        if (mc.player.getOffhandItem().has(DataComponents.DEATH_PROTECTION)) {
             return;
         }
 
-        int slot = InvHelper.getItemSlot(Items.TOTEM_OF_UNDYING);
+        int slot = InvHelper.getItemSlot(stack -> stack.has(DataComponents.DEATH_PROTECTION));
         if (slot == -1) {
             return;
         }

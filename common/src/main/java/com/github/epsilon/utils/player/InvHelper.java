@@ -15,6 +15,7 @@ import net.minecraft.world.item.equipment.Equippable;
 import net.minecraft.world.level.block.*;
 
 import java.util.*;
+import java.util.function.Predicate;
 
 public class InvHelper {
 
@@ -341,12 +342,16 @@ public class InvHelper {
     }
 
     public static int getItemSlot(Item item) {
+        return getItemSlot(stack -> stack.getItem() == item);
+    }
+
+    public static int getItemSlot(Predicate<ItemStack> predicate) {
         if (mc.player == null) {
             return -1;
         }
 
         for (int i = 0; i < mc.player.getInventory().getNonEquipmentItems().size(); i++) {
-            if (getInventoryStack(i).getItem() == item) {
+            if (predicate.test(getInventoryStack(i))) {
                 return i;
             }
         }
@@ -513,8 +518,12 @@ public class InvHelper {
     }
 
     public static int getItemCount(Item item) {
+        return getItemCount(stack -> stack.getItem() == item);
+    }
+
+    public static int getItemCount(Predicate<ItemStack> predicate) {
         return getAllItems().stream()
-                .filter(stack -> !stack.isEmpty() && stack.getItem() == item)
+                .filter(stack -> !stack.isEmpty() && predicate.test(stack))
                 .mapToInt(ItemStack::getCount)
                 .sum();
     }
@@ -660,7 +669,7 @@ public class InvHelper {
             return true;
         }
 
-        return stack.getItem() == Items.TOTEM_OF_UNDYING || stack.getItem() == Items.END_CRYSTAL;
+        return stack.has(DataComponents.DEATH_PROTECTION) || stack.getItem() == Items.END_CRYSTAL;
     }
 
     public static boolean isCommonItemUseful(ItemStack stack) {

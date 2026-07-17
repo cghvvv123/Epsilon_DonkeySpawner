@@ -8,8 +8,8 @@ import com.github.epsilon.settings.impl.BoolSetting;
 import com.github.epsilon.settings.impl.DoubleSetting;
 import com.github.epsilon.utils.player.ClickSlotUtils;
 import net.minecraft.client.gui.screens.inventory.InventoryScreen;
+import net.minecraft.core.component.DataComponents;
 import net.minecraft.world.inventory.Slot;
-import net.minecraft.world.item.Items;
 
 import java.util.Random;
 
@@ -70,8 +70,8 @@ public class HoverTotem extends Module {
                 int totemSlot = this.slot.getValue().intValue();
                 int totem = totemSlot - 1;
 
-                if (hoveredSlot.getItem().is(Items.TOTEM_OF_UNDYING)) {
-                    if (this.hotbar.getValue() && !mc.player.getInventory().getItem(totem).is(Items.TOTEM_OF_UNDYING)) {
+                if (hoveredSlot.getItem().has(DataComponents.DEATH_PROTECTION)) {
+                    if (this.hotbar.getValue() && !mc.player.getInventory().getItem(totem).has(DataComponents.DEATH_PROTECTION)) {
                         if (this.clock > 0) {
                             --this.clock;
                             return;
@@ -79,7 +79,7 @@ public class HoverTotem extends Module {
                         ClickSlotUtils.swap(mc.player.containerMenu.containerId, slotIndex, totem);
                         this.currentDelay = this.getRandomDelay();
                         this.clock = this.currentDelay;
-                    } else if (!mc.player.getOffhandItem().is(Items.TOTEM_OF_UNDYING)) {
+                    } else if (!mc.player.getOffhandItem().has(DataComponents.DEATH_PROTECTION)) {
                         if (this.clock > 0) {
                             --this.clock;
                             return;

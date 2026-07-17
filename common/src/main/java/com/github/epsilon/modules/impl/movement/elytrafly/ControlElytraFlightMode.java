@@ -12,8 +12,8 @@ import com.github.epsilon.utils.player.InvUtils;
 import com.github.epsilon.utils.rotation.Priority;
 import com.github.epsilon.utils.rotation.Rot2f;
 import com.github.epsilon.utils.timer.TimerUtils;
+import net.minecraft.core.component.DataComponents;
 import net.minecraft.util.Mth;
-import net.minecraft.world.item.Items;
 import net.minecraft.world.phys.AABB;
 
 public class ControlElytraFlightMode extends ElytraFlightMode {
@@ -85,7 +85,7 @@ public class ControlElytraFlightMode extends ElytraFlightMode {
     private void updateControl() {
         if (elytraFly.noSprint.getValue() && mc.player.isSprinting()) return;
 
-        FindItemResult elytra = InvUtils.find(Items.ELYTRA);
+        FindItemResult elytra = InvUtils.find(stack -> stack.has(DataComponents.GLIDER));
 
         if (!canGlide(elytra.found()) || mc.player.onGround()) {
             shouldJump = true;

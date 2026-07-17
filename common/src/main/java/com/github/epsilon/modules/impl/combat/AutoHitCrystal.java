@@ -15,6 +15,7 @@ import com.github.epsilon.utils.math.MathUtils;
 import com.github.epsilon.utils.player.FindItemResult;
 import com.github.epsilon.utils.player.InvUtils;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.component.DataComponents;
 import net.minecraft.network.protocol.game.ServerboundSwingPacket;
 import net.minecraft.tags.ItemTags;
 import net.minecraft.util.Mth;
@@ -115,7 +116,7 @@ public class AutoHitCrystal extends Module {
 
             var mainHandStack = mc.player.getMainHandItem();
             if (!(mainHandStack.is(ItemTags.SWORDS) ||
-                    (this.workWithTotem.getValue() && mainHandStack.is(Items.TOTEM_OF_UNDYING)) ||
+                    (this.workWithTotem.getValue() && mainHandStack.has(DataComponents.DEATH_PROTECTION)) ||
                     (this.workWithCrystal.getValue() && mainHandStack.is(Items.END_CRYSTAL)) ||
                     (this.workWithPickaxe.getValue() && mainHandStack.is(ItemTags.PICKAXES)) ||
                     this.active)) {
