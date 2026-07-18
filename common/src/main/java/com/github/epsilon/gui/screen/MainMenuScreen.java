@@ -373,7 +373,7 @@ public class MainMenuScreen extends Screen {
                 float textY = buttonY + buttonTextOffsetY;
                 scope.layer(10, layer -> layer.text(label, drawX, textY, buttonTextScale, labelColor));
             }
-            buildVanillaMenuEntry(scope, mouseX, mouseY, introProgress, scale, buttonWidth, buttonsY,
+            buildVanillaMenuEntry(scope, mouseX, mouseY, introProgress, menuVisibility, scale, buttonWidth, buttonsY,
                     buttonLineHeight, buttonHitPaddingX, buttonHitPaddingTop, buttonHitHeight,
                     preferredButtonTextScale, buttonTextOffsetY);
         });
@@ -382,10 +382,11 @@ public class MainMenuScreen extends Screen {
     }
 
     private void buildVanillaMenuEntry(UiTree.Scope scope, int mouseX, int mouseY, float introProgress,
+                                       float menuVisibility,
                                        float scale, float buttonWidth, float buttonsY, float buttonLineHeight,
                                        float buttonHitPaddingX, float buttonHitPaddingTop, float buttonHitHeight,
                                        float preferredButtonTextScale, float buttonTextOffsetY) {
-        float appear = easeOutCubic(introProgress);
+        float appear = easeOutCubic(introProgress) * menuVisibility;
         if (appear <= 0.001f) {
             vanillaMenuEntry.setBounds(0.0f, 0.0f, 0.0f, 0.0f);
             return;
