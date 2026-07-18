@@ -1,13 +1,12 @@
 package com.github.epsilon.modules.impl.movement.elytrafly;
 
-import com.github.epsilon.events.impl.TravelEvent;
+import com.github.epsilon.events.impl.LivingEntityTravelEvent;
 import com.github.epsilon.modules.impl.movement.AutoPilot;
 import com.github.epsilon.modules.impl.player.ElytraSwap;
 import com.github.epsilon.settings.Setting;
 import com.github.epsilon.settings.SettingGroup;
 import com.github.epsilon.settings.impl.BoolSetting;
 import com.github.epsilon.settings.impl.DoubleSetting;
-import com.github.epsilon.utils.movement.AutoPilotUtil;
 import com.github.epsilon.utils.player.FindItemResult;
 import com.github.epsilon.utils.player.InvUtils;
 import com.github.epsilon.utils.timer.TimerUtils;
@@ -101,12 +100,18 @@ public final class NCPControlElytraFlightMode extends ElytraFlightMode {
         if (mc.player == null) return;
 
         restoreUnbreakingGravity();
+    }
+
+    @Override
+    public void onClientTick() {
+        if (mc.player == null) return;
+
         handleEasyTakeoff();
         if (mc.player.isFallFlying()) updateDefensiveGravity();
     }
 
     @Override
-    public void onTravel(TravelEvent event) {
+    public void onLivingEntityTravel(LivingEntityTravelEvent event) {
         updatePositionDelta();
 
         if (!mc.player.isFallFlying()) return;
@@ -173,17 +178,10 @@ public final class NCPControlElytraFlightMode extends ElytraFlightMode {
         boolean sneak = mc.options.keyShift.isDown() && !mc.options.keyJump.isDown();
         float yaw = mc.player.getYRot();
 
-        boolean autoMove = false;
         if (isMoveBindPress()) {
             yawVelocityTick = Integer.MIN_VALUE;
         } else if (jump) {
             yaw = riseYaw;
-        } else if (!sneak) {
-            float cruiseYaw = AutoPilot.INSTANCE.getCruiseYaw();
-            if (cruiseYaw != AutoPilotUtil.INACTIVE_YAW) {
-                yaw = cruiseYaw;
-                autoMove = true;
-            }
         }
 
         if (water) {
@@ -198,8 +196,15 @@ public final class NCPControlElytraFlightMode extends ElytraFlightMode {
             return move(yaw, false, water ? waterDownSpeed.getValue() : downSpeed.getValue(), 0.0D,
                     potionMultiplier(false)).add(downMove(water));
         }
-        return move(yaw, autoMove, water ? waterSpeed.getValue() : speed.getValue(), 0.0D,
-                potionMultiplier(false));
+
+        double multiplier = potionMultiplier(false);
+        Vec3 cruiseMovement = AutoPilot.INSTANCE.getAutoPilotMovement(
+                (water ? waterSpeed.getValue() : speed.getValue()) * multiplier,
+                water ? waterYawOffset : 0.0F
+        );
+        if (cruiseMovement != null) return cruiseMovement;
+
+        return move(yaw, false, water ? waterSpeed.getValue() : speed.getValue(), 0.0D, multiplier);
     }
 
     private Vec3 riseHeight(boolean water, float yaw) {

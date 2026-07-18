@@ -1,9 +1,9 @@
 package com.github.epsilon.mixins;
 
-import com.github.epsilon.events.bus.EventBus;
 import com.github.epsilon.events.impl.AttackSlowDownEvent;
 import com.github.epsilon.events.impl.AttackYawEvent;
-import com.github.epsilon.events.impl.TravelEvent;
+import com.github.epsilon.events.impl.PlayerTravelEvent;
+import com.github.epsilon.events.bus.EventBus;
 import com.github.epsilon.modules.impl.movement.KeepSprint;
 import com.llamalad7.mixinextras.injector.ModifyExpressionValue;
 import net.minecraft.world.entity.Entity;
@@ -21,12 +21,10 @@ public class MixinPlayer {
 
     @Inject(method = "travel", at = @At("HEAD"), cancellable = true)
     private void onTravelPre(Vec3 input, CallbackInfo ci) {
-        if ((Player) (Object) this == mc.player) {
-            TravelEvent event = EventBus.INSTANCE.post(new TravelEvent());
-            if (event.isCancelled()) {
-                ci.cancel();
-            }
-        }
+        if ((Player) (Object) this != mc.player) return;
+
+        PlayerTravelEvent event = EventBus.INSTANCE.post(new PlayerTravelEvent());
+        if (event.isCancelled()) ci.cancel();
     }
 
     @ModifyExpressionValue(method = {"causeExtraKnockback", "doSweepAttack"}, at = @At(value = "INVOKE", target = "Lnet/minecraft/world/entity/player/Player;getYRot()F"))

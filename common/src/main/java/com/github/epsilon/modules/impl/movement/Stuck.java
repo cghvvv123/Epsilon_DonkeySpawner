@@ -4,7 +4,7 @@ import com.github.epsilon.events.bus.EventHandler;
 import com.github.epsilon.events.impl.KeyboardInputEvent;
 import com.github.epsilon.events.impl.PacketEvent;
 import com.github.epsilon.events.impl.RightClickEvent;
-import com.github.epsilon.events.impl.TravelEvent;
+import com.github.epsilon.events.impl.PlayerTravelEvent;
 import com.github.epsilon.modules.Category;
 import com.github.epsilon.modules.Module;
 import com.github.epsilon.settings.impl.EnumSetting;
@@ -57,7 +57,7 @@ public class Stuck extends Module {
     }
 
     @EventHandler
-    private void onTravel(TravelEvent event) {
+    private void onTravel(PlayerTravelEvent event) {
         if (mode.is(Mode.CancelMove) && mc.player.positionReminder < 19) {
             event.cancel();
         }

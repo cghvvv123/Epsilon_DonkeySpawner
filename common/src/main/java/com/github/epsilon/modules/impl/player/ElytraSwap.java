@@ -3,10 +3,12 @@ package com.github.epsilon.modules.impl.player;
 import com.github.epsilon.elements.impl.notification.NotificationMode;
 import com.github.epsilon.assets.i18n.EpsilonTranslations;
 import com.github.epsilon.events.bus.EventHandler;
+import com.github.epsilon.events.impl.ClientTickEvent;
 import com.github.epsilon.events.impl.PlayerTickEvent;
 import com.github.epsilon.modules.Category;
 import com.github.epsilon.modules.Module;
 import com.github.epsilon.modules.impl.movement.Flight;
+import com.github.epsilon.modules.impl.movement.elytrafly.ElytraFlightModes;
 import com.github.epsilon.modules.impl.movement.elytrafly.ElytraFly;
 import com.github.epsilon.settings.SettingGroup;
 import com.github.epsilon.settings.impl.BoolSetting;
@@ -96,8 +98,8 @@ public class ElytraSwap extends Module {
     protected void onEnable() {
         resetState();
         isKeyDown = false;
-        wasFlightActive = ElytraFly.INSTANCE.isEnabled();
-        flightSessionActive = wasFlightActive || (mc.player != null && mc.player.isFallFlying());
+        wasFlightActive = isNcpFlightActive();
+        flightSessionActive = wasFlightActive;
         pendingChestplateSwap = false;
         emergencyActive = false;
         emergencyExitRequested = false;
@@ -120,12 +122,13 @@ public class ElytraSwap extends Module {
     @EventHandler
     private void onTick(PlayerTickEvent.Pre event) {
         if (nullCheck()) return;
+        if (mode.is(SwapMode.Manual)) onManualTick();
+    }
 
-        if (mode.is(SwapMode.Auto)) {
-            onAutoTick();
-        } else {
-            onManualTick();
-        }
+    @EventHandler
+    private void onClientTick(ClientTickEvent.Pre event) {
+        if (nullCheck()) return;
+        if (mode.is(SwapMode.Auto)) onAutoTick();
     }
 
     private void onManualTick() {
@@ -190,8 +193,13 @@ public class ElytraSwap extends Module {
     }
 
     private void onAutoTick() {
-        boolean flightActive = ElytraFly.INSTANCE.isEnabled();
-        if (flightActive || mc.player.isFallFlying()) flightSessionActive = true;
+        if (!ElytraFly.INSTANCE.mode.is(ElytraFlightModes.NCPControl)) {
+            clearNcpAutoState();
+            return;
+        }
+
+        boolean flightActive = isNcpFlightActive();
+        if (flightActive) flightSessionActive = true;
 
         if (wasFlightActive && !flightActive) {
             if (shouldImmediatelySwapBack()) {
@@ -215,7 +223,7 @@ public class ElytraSwap extends Module {
         }
 
         // Auto 模式只与 AutoArmor 的 ElytraPlus 联动。
-        if (!AutoArmor.INSTANCE.isElytraPlusActive()) {
+        if (!AutoArmor.INSTANCE.isNcpElytraPlusActive()) {
             restoreEmergency();
             wasFlightActive = flightActive;
             if ((mc.player.onGround() || mc.player.isPassenger()) && !mc.player.isFallFlying()) {
@@ -256,13 +264,14 @@ public class ElytraSwap extends Module {
     /** 按源 ElytraSwap 的顺序区分装备、替换和紧急卡空。 */
     private void evaluateElytraState() {
         ItemStack current = mc.player.getItemBySlot(EquipmentSlot.CHEST);
-        boolean wearingValidElytra = current.has(DataComponents.GLIDER)
-                && current.getMaxDamage() - current.getDamageValue() > 1;
+        boolean wearingGlider = current.has(DataComponents.GLIDER);
+        boolean wearingValidElytra = LivingEntity.canGlideUsing(current, EquipmentSlot.CHEST);
 
         if (!wearingValidElytra) {
-            if (findBestElytraSlot(1) != -1) {
-                if (!ensureElytraEquipped() && emergencyHover.getValue()) activateEmergency();
-            } else if (emergencyHover.getValue()) {
+            int replacement = findBestElytraSlot(1);
+            if (replacement != -1) {
+                ensureElytraEquipped();
+            } else if (wearingGlider && emergencyHover.getValue()) {
                 activateEmergency();
             }
             return;
@@ -285,7 +294,9 @@ public class ElytraSwap extends Module {
 
     /** 等待落地期间阻止 AutoArmor 抢先换回胸甲。 */
     public boolean isWaitingForFlightLanding() {
-        return mode.is(SwapMode.Auto)
+        return isEnabled()
+                && mode.is(SwapMode.Auto)
+                && ElytraFly.INSTANCE.mode.is(ElytraFlightModes.NCPControl)
                 && (pendingChestplateSwap || (flightSessionActive && !ElytraFly.INSTANCE.isEnabled()))
                 && mc.player != null
                 && !mc.player.onGround()
@@ -312,7 +323,9 @@ public class ElytraSwap extends Module {
     }
 
     public boolean isAutoMode() {
-        return isEnabled() && mode.is(SwapMode.Auto) && AutoArmor.INSTANCE.isElytraPlusActive();
+        return isEnabled()
+                && mode.is(SwapMode.Auto)
+                && AutoArmor.INSTANCE.isNcpElytraPlusActive();
     }
 
     public boolean swapToChestplateImmediately() {
@@ -480,7 +493,22 @@ public class ElytraSwap extends Module {
     }
 
     public boolean isEmergencyActive() {
-        return emergencyActive;
+        return emergencyActive
+                && ElytraFly.INSTANCE.mode.is(ElytraFlightModes.NCPControl);
+    }
+
+    private boolean isNcpFlightActive() {
+        return ElytraFly.INSTANCE.isEnabled()
+                && ElytraFly.INSTANCE.mode.is(ElytraFlightModes.NCPControl);
+    }
+
+    private void clearNcpAutoState() {
+        restoreEmergency();
+        wasFlightActive = false;
+        flightSessionActive = false;
+        pendingChestplateSwap = false;
+        emergencyExitRequested = false;
+        jumpPressedLastTick = false;
     }
 
     private void restoreEmergency() {

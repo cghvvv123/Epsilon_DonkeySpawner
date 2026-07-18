@@ -64,26 +64,42 @@ public class AutoPilot extends Module {
         warnedWrongFlightMode = false;
     }
 
-    public float getCruiseYaw() {
-        if (!isEnabled()) return AutoPilotUtil.INACTIVE_YAW;
-        if (!isNcpControlAvailable()) {
-            warnWrongFlightMode();
-            return AutoPilotUtil.INACTIVE_YAW;
-        }
-        // 鞘翅巡航只允许在实际滑翔时生效，乘坐实体时不向鞘翅控制注入航向。
-        if (mc.player == null || mc.player.isPassenger() || !mc.player.isFallFlying()) {
-            return AutoPilotUtil.INACTIVE_YAW;
-        }
-        return AutoPilotUtil.calcAutoMoveYaw(
+    private Vec3 getCruiseMovement(float yaw, double speed) {
+        double radians = Math.toRadians(yaw + 90.0F);
+        return new Vec3(Math.cos(radians) * speed, 0.0D, Math.sin(radians) * speed);
+    }
+
+    /**
+     * 按实体控制的自动巡航流程计算速度向量；未满足接管条件时返回 null。
+     */
+    public Vec3 getAutoPilotMovement(double speed, float yawOffset) {
+        if (!isEnabled() || mc.player == null || !canControlCurrentFlight()) return null;
+
+        float autoYaw = AutoPilotUtil.calcAutoMoveYaw(
                 destinationX.getValue(),
                 destinationZ.getValue(),
                 cruiseHeight.getValue(),
                 playerDodge.getValue()
         );
+        if (autoYaw == AutoPilotUtil.INACTIVE_YAW) {
+            tryToggleOffOnArrival();
+            return null;
+        }
+
+        if (pauseInUnloadedChunks.getValue()) {
+            int chunkX = (int) (mc.player.getX() / 16);
+            int chunkZ = (int) (mc.player.getZ() / 16);
+            if (!mc.level.getChunkSource().hasChunk(chunkX, chunkZ)) return Vec3.ZERO;
+        }
+
+        return getCruiseMovement(autoYaw + yawOffset, speed);
     }
 
-    private boolean isNcpControlAvailable() {
-        return ElytraFly.INSTANCE.isEnabled() && ElytraFly.INSTANCE.mode.is(ElytraFlightModes.NCPControl);
+    private boolean canControlCurrentFlight() {
+        if (mc.player.isPassenger()) return true;
+        return mc.player.isFallFlying()
+                && ElytraFly.INSTANCE.isEnabled()
+                && ElytraFly.INSTANCE.mode.is(ElytraFlightModes.NCPControl);
     }
 
     private void warnWrongFlightMode() {
@@ -115,36 +131,11 @@ public class AutoPilot extends Module {
     }
 
     private void runSimpleMode(EntityMoveEvent event, EntityControl entityControl) {
-        float autoYaw = AutoPilotUtil.calcAutoMoveYaw(
-                destinationX.getValue(),
-                destinationZ.getValue(),
-                cruiseHeight.getValue(),
-                playerDodge.getValue()
-        );
-        if (autoYaw != AutoPilotUtil.INACTIVE_YAW) {
-            event.movement = getAutoPilotMovement(autoYaw, entityControl.getHorizontalSpeed());
+        Vec3 movement = getAutoPilotMovement(entityControl.getHorizontalSpeed() / 20.0, 0.0F);
+        if (movement != null) {
+            event.movement = movement;
             return;
         }
-
-        tryToggleOffOnArrival();
-    }
-
-    private Vec3 getAutoPilotMovement(float autoYaw, double horizontalSpeed) {
-        double speed = horizontalSpeed / 20.0;
-        double radians = Math.toRadians(autoYaw + 90.0);
-        double motionX = Math.cos(radians) * speed;
-        double motionZ = Math.sin(radians) * speed;
-
-        if (!pauseInUnloadedChunks.getValue()) {
-            return new Vec3(motionX, 0.0, motionZ);
-        }
-
-        int chunkX = (int) (mc.player.getX() / 16);
-        int chunkZ = (int) (mc.player.getZ() / 16);
-        if (!mc.level.getChunkSource().hasChunk(chunkX, chunkZ)) {
-            return Vec3.ZERO;
-        }
-        return new Vec3(motionX, 0.0, motionZ);
     }
 
     private void tryToggleOffOnArrival() {

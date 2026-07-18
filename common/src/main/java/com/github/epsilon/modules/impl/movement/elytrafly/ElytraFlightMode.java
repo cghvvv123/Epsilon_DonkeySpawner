@@ -3,7 +3,8 @@ package com.github.epsilon.modules.impl.movement.elytrafly;
 import com.github.epsilon.events.impl.FallFlyingEvent;
 import com.github.epsilon.events.impl.FireworkRotationEvent;
 import com.github.epsilon.events.impl.KeyboardInputEvent;
-import com.github.epsilon.events.impl.TravelEvent;
+import com.github.epsilon.events.impl.LivingEntityTravelEvent;
+import com.github.epsilon.events.impl.PlayerTravelEvent;
 import com.github.epsilon.modules.impl.player.ElytraSwap;
 import com.github.epsilon.utils.player.ClickSlotUtils;
 import com.github.epsilon.utils.player.FindItemResult;
@@ -37,7 +38,13 @@ public abstract class ElytraFlightMode {
     public void onPlayerTick() {
     }
 
-    public void onTravel(TravelEvent event) {
+    public void onClientTick() {
+    }
+
+    public void onPlayerTravel(PlayerTravelEvent event) {
+    }
+
+    public void onLivingEntityTravel(LivingEntityTravelEvent event) {
     }
 
     public void onKeyboardInput(KeyboardInputEvent event) {
@@ -65,11 +72,14 @@ public abstract class ElytraFlightMode {
         if (!elytraFly.unbreaking.getValue()) return;
         if (ElytraSwap.INSTANCE.isEmergencyActive()) return;
         if (!elytraFly.shouldResetUnbreaking()) return;
-        if (!elytraFly.unbreakingInGui.getValue() && mc.screen != null) return;
+        if (elytraFly.mode.is(ElytraFlightModes.NCPControl)
+                && !elytraFly.unbreakingInGui.getValue()
+                && mc.screen != null) return;
         if (!mc.player.isFallFlying() || mc.player.onGround()) return;
         // 只有玩家背包菜单的槽位布局包含胸甲槽 6，外部容器界面不能复用该点击流程。
         if (mc.player.containerMenu != mc.player.inventoryMenu) return;
         if (!unbreakingTimer.passedMillise(elytraFly.unbreakingDelay.getValue())) return;
+        if (!elytraFly.isSmartInfResetAreaClear()) return;
 
         ItemStack chestStack = mc.player.getItemBySlot(EquipmentSlot.CHEST);
         if (!LivingEntity.canGlideUsing(chestStack, EquipmentSlot.CHEST)) return;

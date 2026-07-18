@@ -51,9 +51,11 @@ public class ElytraFly extends Module {
             () -> mode.is(ElytraFlightModes.Control) || mode.is(ElytraFlightModes.Pitch40));
     public final BoolSetting unbreaking = boolSetting("Unbreaking", true);
     public final IntSetting unbreakingDelay = intSetting("Unbreaking Delay", 800, 100, 2000, 50, () -> unbreaking.getValue());
-    public final BoolSetting unbreakingInGui = boolSetting("Unbreaking In GUI", true, () -> unbreaking.getValue());
+    public final BoolSetting unbreakingInGui = boolSetting("Unbreaking In GUI", true,
+            () -> unbreaking.getValue() && mode.is(ElytraFlightModes.NCPControl));
 
-    public final BoolSetting smartInfElytra = boolSetting("Smart Inf Elytra", true, () -> unbreaking.getValue());
+    public final BoolSetting smartInfElytra = boolSetting("Smart Inf Elytra", true,
+            () -> unbreaking.getValue() && mode.is(ElytraFlightModes.NCPControl));
     public final BoolSetting smartInfOnlyWhenAfk = boolSetting("Only When AFK", true, this::isSmartInfEnabled);
     public final IntSetting smartInfDirectionTime = intSetting("Direction Time", 60, 0, 200, 1,
             () -> isSmartInfEnabled() && smartInfOnlyWhenAfk.getValue());
@@ -67,11 +69,11 @@ public class ElytraFly extends Module {
             () -> isSmartInfEnabled() && smartInfOnlyWhenAfk.getValue());
     public final BoolSetting smartInfExcludeDescending = boolSetting("Exclude Descending", false, this::isSmartInfEnabled);
     public final BoolSetting smartInfOnlyWhenAboveClear = boolSetting("Only When Above Clear", false,
-            () -> isSmartInfEnabled() && smartInfOnlyWhenAfk.getValue() && !smartInfOnlyWhenSteady.getValue());
+            () -> isSmartInfEnabled() && !smartInfOnlyWhenSteady.getValue());
     public final IntSetting smartInfAboveClearTolerance = intSetting("Above Clear Tolerance", 2, 0, 5, 1,
-            () -> isSmartInfEnabled() && smartInfOnlyWhenAboveClear.getValue());
+            () -> isSmartInfEnabled() && smartInfOnlyWhenAboveClear.getValue() && !smartInfOnlyWhenSteady.getValue());
     public final IntSetting smartInfBelowClearTolerance = intSetting("Below Clear Tolerance", 2, 0, 5, 1,
-            () -> isSmartInfEnabled() && smartInfOnlyWhenAboveClear.getValue());
+            () -> isSmartInfEnabled() && smartInfOnlyWhenAboveClear.getValue() && !smartInfOnlyWhenSteady.getValue());
     public final BoolSetting noSprint = boolSetting("No Sprint", true, () -> mode.is(ElytraFlightModes.Control) && armored.getValue());
     public final BoolSetting useFireworks = boolSetting("Use Fireworks", true, () -> mode.is(ElytraFlightModes.Control) || mode.is(ElytraFlightModes.NCPControl));
     public final IntSetting boostDelay = intSetting("Boost Delay", 20, 2, 50, 1, () -> (mode.is(ElytraFlightModes.Control) || mode.is(ElytraFlightModes.NCPControl)) && useFireworks.getValue());
@@ -186,10 +188,22 @@ public class ElytraFly extends Module {
     }
 
     @EventHandler
-    private void onTravel(TravelEvent event) {
+    private void onClientTick(ClientTickEvent.Pre event) {
+        if (nullCheck() || forcePause) return;
+        getActiveMode().onClientTick();
+    }
+
+    @EventHandler
+    private void onPlayerTravel(PlayerTravelEvent event) {
         if (nullCheck()) return;
         if (forcePause) return;
-        getActiveMode().onTravel(event);
+        getActiveMode().onPlayerTravel(event);
+    }
+
+    @EventHandler
+    private void onLivingEntityTravel(LivingEntityTravelEvent event) {
+        if (nullCheck() || forcePause) return;
+        getActiveMode().onLivingEntityTravel(event);
     }
 
     @EventHandler
@@ -238,11 +252,19 @@ public class ElytraFly extends Module {
     }
 
     private boolean isSmartInfEnabled() {
-        return unbreaking.getValue() && smartInfElytra.getValue();
+        return mode.is(ElytraFlightModes.NCPControl)
+                && unbreaking.getValue()
+                && smartInfElytra.getValue();
     }
 
     public boolean shouldResetUnbreaking() {
-        return !smartInfElytra.getValue() || smartInfReady;
+        return !isSmartInfEnabled() || smartInfReady;
+    }
+
+    public boolean isSmartInfResetAreaClear() {
+        return !isSmartInfEnabled()
+                || !smartInfOnlyWhenAboveClear.getValue()
+                || isSmartInfAreaClear();
     }
 
     private void resetSmartInfState() {
@@ -252,7 +274,7 @@ public class ElytraFly extends Module {
     }
 
     private void updateSmartInfState() {
-        if (!smartInfElytra.getValue() || !isEnabled()) {
+        if (!isSmartInfEnabled() || !isEnabled()) {
             resetSmartInfState();
             return;
         }
@@ -289,8 +311,7 @@ public class ElytraFly extends Module {
         if (meetsCondition) smartInfStableTicks++;
         else smartInfStableTicks = 0;
 
-        smartInfReady = smartInfStableTicks >= smartInfDirectionTime.getValue()
-                && (!smartInfOnlyWhenAboveClear.getValue() || isSmartInfAreaClear());
+        smartInfReady = smartInfStableTicks >= smartInfDirectionTime.getValue();
         if (!wasReady && smartInfReady) getActiveMode().resetUnbreakingTimer();
     }
 
@@ -302,10 +323,12 @@ public class ElytraFly extends Module {
     private boolean isSmartInfAreaClear() {
         BlockPos base = mc.player.blockPosition();
         for (int y = 1; y <= smartInfAboveClearTolerance.getValue(); y++) {
-            if (!mc.level.getBlockState(base.above(y)).getCollisionShape(mc.level, base.above(y)).isEmpty()) return false;
+            BlockPos pos = base.above(y);
+            if (mc.level.getBlockState(pos).isCollisionShapeFullBlock(mc.level, pos)) return false;
         }
         for (int y = 1; y <= smartInfBelowClearTolerance.getValue(); y++) {
-            if (!mc.level.getBlockState(base.below(y)).getCollisionShape(mc.level, base.below(y)).isEmpty()) return false;
+            BlockPos pos = base.below(y);
+            if (mc.level.getBlockState(pos).isCollisionShapeFullBlock(mc.level, pos)) return false;
         }
         return true;
     }

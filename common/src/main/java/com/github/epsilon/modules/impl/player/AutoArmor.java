@@ -68,6 +68,11 @@ public class AutoArmor extends Module {
                 && !ElytraFly.INSTANCE.isArmorMode();
     }
 
+    public boolean isNcpElytraPlusActive() {
+        return isElytraPlusActive()
+                && ElytraFly.INSTANCE.mode.is(ElytraFlightModes.NCPControl);
+    }
+
     private int tickDelay;
 
     private final List<ArmorData> armorList = List.of(
@@ -177,12 +182,12 @@ public class AutoArmor extends Module {
             if (!LivingEntity.canGlideUsing(stack, slot)
                     || stack.getMaxDamage() - stack.getDamageValue() <= 1) return 0;
 
-            // ElytraPlus 由 ElytraSwap 控制起飞时机；仅开启 ElytraFly 时不要立即把背包鞘翅换上。
-            // 只有实际处于空中或滑翔状态时保持鞘翅优先，落地站立后允许换回胸甲。
+            boolean ncpControl = ElytraFly.INSTANCE.mode.is(ElytraFlightModes.NCPControl);
             boolean elytraFlyActive = elytraPriority.is(ElytraPriority.ElytraPlus)
                     && ElytraFly.INSTANCE.isEnabled()
                     && !ElytraFly.INSTANCE.isArmorMode()
-                    && (mc.player.isFallFlying()
+                    && (!ncpControl
+                    || mc.player.isFallFlying()
                     || (!mc.player.onGround() && !mc.player.isPassenger()));
             boolean preserveEquippedElytra = elytraPriority.is(ElytraPriority.Ignore)
                     && mc.player.getItemBySlot(EquipmentSlot.CHEST).has(DataComponents.GLIDER);

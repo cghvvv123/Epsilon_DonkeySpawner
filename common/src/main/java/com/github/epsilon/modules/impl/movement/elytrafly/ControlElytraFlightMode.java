@@ -3,7 +3,7 @@ package com.github.epsilon.modules.impl.movement.elytrafly;
 import com.github.epsilon.events.impl.FallFlyingEvent;
 import com.github.epsilon.events.impl.FireworkRotationEvent;
 import com.github.epsilon.events.impl.KeyboardInputEvent;
-import com.github.epsilon.events.impl.TravelEvent;
+import com.github.epsilon.events.impl.PlayerTravelEvent;
 import com.github.epsilon.managers.Managers;
 import com.github.epsilon.modules.impl.movement.follower.Follower;
 import com.github.epsilon.modules.impl.movement.follower.FollowerInput;
@@ -12,8 +12,9 @@ import com.github.epsilon.utils.player.InvUtils;
 import com.github.epsilon.utils.rotation.Priority;
 import com.github.epsilon.utils.rotation.Rot2f;
 import com.github.epsilon.utils.timer.TimerUtils;
-import net.minecraft.core.component.DataComponents;
 import net.minecraft.util.Mth;
+import net.minecraft.world.entity.EquipmentSlot;
+import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.phys.AABB;
 
 public class ControlElytraFlightMode extends ElytraFlightMode {
@@ -49,7 +50,7 @@ public class ControlElytraFlightMode extends ElytraFlightMode {
     }
 
     @Override
-    public void onTravel(TravelEvent event) {
+    public void onPlayerTravel(PlayerTravelEvent event) {
         boolean avoidCeilingLift = shouldAvoidCeilingLift();
 
         if (avoidCeilingLift && mc.player.getDeltaMovement().y > 0.0) {
@@ -85,7 +86,7 @@ public class ControlElytraFlightMode extends ElytraFlightMode {
     private void updateControl() {
         if (elytraFly.noSprint.getValue() && mc.player.isSprinting()) return;
 
-        FindItemResult elytra = InvUtils.find(stack -> stack.has(DataComponents.GLIDER));
+        FindItemResult elytra = InvUtils.find(stack -> LivingEntity.canGlideUsing(stack, EquipmentSlot.CHEST));
 
         if (!canGlide(elytra.found()) || mc.player.onGround()) {
             shouldJump = true;

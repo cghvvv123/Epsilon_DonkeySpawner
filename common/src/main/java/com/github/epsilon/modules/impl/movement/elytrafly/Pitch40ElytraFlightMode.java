@@ -11,7 +11,8 @@ import com.github.epsilon.utils.player.InvUtils;
 import com.github.epsilon.utils.rotation.Priority;
 import com.github.epsilon.utils.rotation.Rot2f;
 import com.github.epsilon.utils.timer.TimerUtils;
-import net.minecraft.core.component.DataComponents;
+import net.minecraft.world.entity.EquipmentSlot;
+import net.minecraft.world.entity.LivingEntity;
 
 public class Pitch40ElytraFlightMode extends ElytraFlightMode {
 
@@ -147,7 +148,7 @@ public class Pitch40ElytraFlightMode extends ElytraFlightMode {
             return;
         }
 
-        FindItemResult elytra = InvUtils.find(stack -> stack.has(DataComponents.GLIDER));
+        FindItemResult elytra = InvUtils.find(stack -> LivingEntity.canGlideUsing(stack, EquipmentSlot.CHEST));
         if (!canGlide(elytra.found())) {
             fail(EpsilonTranslations.ElytraFly.PITCH40_NO_USABLE_ELYTRA);
             return;
@@ -174,7 +175,7 @@ public class Pitch40ElytraFlightMode extends ElytraFlightMode {
     private void maintainFallFlying() {
         if (mc.player.onGround() || mc.player.isInWater()) return;
 
-        FindItemResult elytra = InvUtils.find(stack -> stack.has(DataComponents.GLIDER));
+        FindItemResult elytra = InvUtils.find(stack -> LivingEntity.canGlideUsing(stack, EquipmentSlot.CHEST));
         if (!canGlide(elytra.found())) return;
 
         if (elytraFly.armored.getValue()) {
