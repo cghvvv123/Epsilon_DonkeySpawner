@@ -194,10 +194,10 @@ public class ElytraFly extends Module {
     }
 
     @EventHandler
-    private void onPlayerTravel(PlayerTravelEvent event) {
+    private void onTravel(TravelEvent event) {
         if (nullCheck()) return;
         if (forcePause) return;
-        getActiveMode().onPlayerTravel(event);
+        getActiveMode().onTravel(event);
     }
 
     @EventHandler

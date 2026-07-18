@@ -4,7 +4,7 @@ import com.github.epsilon.events.impl.FallFlyingEvent;
 import com.github.epsilon.events.impl.FireworkRotationEvent;
 import com.github.epsilon.events.impl.KeyboardInputEvent;
 import com.github.epsilon.events.impl.LivingEntityTravelEvent;
-import com.github.epsilon.events.impl.PlayerTravelEvent;
+import com.github.epsilon.events.impl.TravelEvent;
 import com.github.epsilon.modules.impl.player.ElytraSwap;
 import com.github.epsilon.utils.player.ClickSlotUtils;
 import com.github.epsilon.utils.player.FindItemResult;
@@ -41,7 +41,7 @@ public abstract class ElytraFlightMode {
     public void onClientTick() {
     }
 
-    public void onPlayerTravel(PlayerTravelEvent event) {
+    public void onTravel(TravelEvent event) {
     }
 
     public void onLivingEntityTravel(LivingEntityTravelEvent event) {

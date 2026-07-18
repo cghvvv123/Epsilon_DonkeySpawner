@@ -2,7 +2,7 @@ package com.github.epsilon.mixins;
 
 import com.github.epsilon.events.impl.AttackSlowDownEvent;
 import com.github.epsilon.events.impl.AttackYawEvent;
-import com.github.epsilon.events.impl.PlayerTravelEvent;
+import com.github.epsilon.events.impl.TravelEvent;
 import com.github.epsilon.events.bus.EventBus;
 import com.github.epsilon.modules.impl.movement.KeepSprint;
 import com.llamalad7.mixinextras.injector.ModifyExpressionValue;
@@ -23,7 +23,7 @@ public class MixinPlayer {
     private void onTravelPre(Vec3 input, CallbackInfo ci) {
         if ((Player) (Object) this != mc.player) return;
 
-        PlayerTravelEvent event = EventBus.INSTANCE.post(new PlayerTravelEvent());
+        TravelEvent event = EventBus.INSTANCE.post(new TravelEvent());
         if (event.isCancelled()) ci.cancel();
     }
 

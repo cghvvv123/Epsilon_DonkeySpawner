@@ -3,7 +3,7 @@ package com.github.epsilon.modules.impl.movement.elytrafly;
 import com.github.epsilon.events.impl.FallFlyingEvent;
 import com.github.epsilon.events.impl.FireworkRotationEvent;
 import com.github.epsilon.events.impl.KeyboardInputEvent;
-import com.github.epsilon.events.impl.PlayerTravelEvent;
+import com.github.epsilon.events.impl.TravelEvent;
 import com.github.epsilon.managers.Managers;
 import com.github.epsilon.modules.impl.movement.follower.Follower;
 import com.github.epsilon.modules.impl.movement.follower.FollowerInput;
@@ -50,7 +50,7 @@ public class ControlElytraFlightMode extends ElytraFlightMode {
     }
 
     @Override
-    public void onPlayerTravel(PlayerTravelEvent event) {
+    public void onTravel(TravelEvent event) {
         boolean avoidCeilingLift = shouldAvoidCeilingLift();
 
         if (avoidCeilingLift && mc.player.getDeltaMovement().y > 0.0) {
