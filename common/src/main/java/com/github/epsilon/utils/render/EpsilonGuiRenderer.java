@@ -27,12 +27,14 @@ import net.minecraft.client.gui.render.GuiItemAtlas;
 import net.minecraft.client.gui.render.TextureSetup;
 import net.minecraft.client.gui.render.pip.OversizedItemRenderer;
 import net.minecraft.client.gui.render.pip.PictureInPictureRenderer;
+import net.minecraft.client.gui.render.pip.GuiEntityRenderer;
 import net.minecraft.client.renderer.*;
 import net.minecraft.client.renderer.feature.FeatureRenderDispatcher;
 import net.minecraft.client.renderer.item.TrackingItemStackRenderState;
 import net.minecraft.client.renderer.state.WindowRenderState;
 import net.minecraft.client.renderer.state.gui.*;
 import net.minecraft.client.renderer.state.gui.pip.OversizedItemRenderState;
+import net.minecraft.client.renderer.state.gui.pip.GuiEntityRenderState;
 import net.minecraft.client.renderer.texture.TextureManager;
 import net.minecraft.resources.Identifier;
 import net.minecraft.util.profiling.Profiler;
@@ -85,6 +87,7 @@ public class EpsilonGuiRenderer implements AutoCloseable {
     private final MultiBufferSource.BufferSource bufferSource;
     private final SubmitNodeCollector submitNodeCollector;
     private final FeatureRenderDispatcher featureRenderDispatcher;
+    private final GuiEntityRenderer entityRenderer;
     private GuiItemAtlas itemAtlas;
     private double cachedGuiScale = Double.NaN;
     private final CubeMap cubeMap = new CubeMap(Identifier.withDefaultNamespace("textures/gui/title/background/panorama"));
@@ -103,6 +106,8 @@ public class EpsilonGuiRenderer implements AutoCloseable {
         this.bufferSource = bufferSource;
         this.submitNodeCollector = submitNodeCollector;
         this.featureRenderDispatcher = featureRenderDispatcher;
+        // GuiGraphicsExtractor.entity 提交的是 PIP 状态，必须由对应 renderer 先渲染到纹理再合成到 HUD。
+        this.entityRenderer = new GuiEntityRenderer(bufferSource, mc.getEntityRenderDispatcher());
     }
 
     public void endFrame() {
@@ -156,6 +161,7 @@ public class EpsilonGuiRenderer implements AutoCloseable {
 
     private void prepare() {
         this.bufferSource.endBatch();
+        this.preparePictureInPicture();
         this.prepareItemElements();
         this.prepareText();
         this.renderState.sortElements(ELEMENT_SORT_COMPARATOR);
@@ -163,6 +169,15 @@ public class EpsilonGuiRenderer implements AutoCloseable {
         this.firstDrawIndexAfterBlur = this.meshesToDraw.size();
         this.addElementsToMeshes(GuiRenderState.TraverseRange.AFTER_BLUR);
         this.recordDraws();
+    }
+
+    private void preparePictureInPicture() {
+        int guiScale = mc.gameRenderer.getGameRenderState().windowRenderState.guiScale;
+        this.renderState.forEachPictureInPicture(state -> {
+            if (state instanceof GuiEntityRenderState entityState) {
+                this.entityRenderer.prepare(entityState, this.renderState, guiScale);
+            }
+        });
     }
 
     private void addElementsToMeshes(GuiRenderState.TraverseRange range) {
@@ -552,6 +567,7 @@ public class EpsilonGuiRenderer implements AutoCloseable {
         }
 
         this.oversizedItemRenderers.values().forEach(PictureInPictureRenderer::close);
+        this.entityRenderer.close();
         this.cubeMap.close();
     }
 

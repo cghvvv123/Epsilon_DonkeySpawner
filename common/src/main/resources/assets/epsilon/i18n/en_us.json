@@ -1961,6 +1961,126 @@
       }
     },
     "elements": {
+      "fps hud": {"_value": "FPS HUD", "display": {"label": "FPS"}, "scale": "Scale", "padding": "Padding", "alignment": {"_value": "Alignment", "left": "Left", "center": "Center", "right": "Right"}, "corner radius": "Corner Radius", "background": "Background", "background color": "Background Color", "background blur": "Background Blur", "label color": "Label Color", "value color": "Value Color"},
+      "tps hud": {"_value": "TPS HUD", "display": {"label": "TPS"}, "scale": "Scale", "padding": "Padding", "alignment": {"_value": "Alignment", "left": "Left", "center": "Center", "right": "Right"}, "corner radius": "Corner Radius", "background": "Background", "background color": "Background Color", "background blur": "Background Blur", "label color": "Label Color", "value color": "Value Color"},
+      "ping hud": {"_value": "Ping HUD", "display": {"label": "Ping", "unit": "ms"}, "scale": "Scale", "padding": "Padding", "alignment": {"_value": "Alignment", "left": "Left", "center": "Center", "right": "Right"}, "corner radius": "Corner Radius", "background": "Background", "background color": "Background Color", "background blur": "Background Blur", "label color": "Label Color", "value color": "Value Color"},
+      "speed hud": {"_value": "Speed HUD", "display": {"label": "Speed", "unit": "b/s"}, "speed mode": {"_value": "Speed Mode", "horizontal": "Horizontal", "alldirections": "All Directions"}, "scale": "Scale", "padding": "Padding", "alignment": {"_value": "Alignment", "left": "Left", "center": "Center", "right": "Right"}, "corner radius": "Corner Radius", "background": "Background", "background color": "Background Color", "background blur": "Background Blur", "label color": "Label Color", "value color": "Value Color"},
+      "vertical speed hud": {"_value": "Vertical Speed HUD", "display": {"label": "Vertical", "unit": "b/s"}, "scale": "Scale", "padding": "Padding", "alignment": {"_value": "Alignment", "left": "Left", "center": "Center", "right": "Right"}, "corner radius": "Corner Radius", "background": "Background", "background color": "Background Color", "background blur": "Background Blur", "label color": "Label Color", "value color": "Value Color"},
+      "coordinates hud": {"_value": "Coordinates HUD", "display": {"coordinates": "Coordinates", "chunk coordinates": "Chunk Coordinates", "region coordinates": "Region Coordinates", "nether coordinates": "Nether Coordinates", "nether chunk coordinates": "Nether Chunk Coordinates", "nether region coordinates": "Nether Region Coordinates", "overworld coordinates": "Overworld Coordinates", "overworld chunk coordinates": "Overworld Chunk Coordinates", "overworld region coordinates": "Overworld Region Coordinates", "end coordinates": "End Coordinates", "end chunk coordinates": "End Chunk Coordinates", "end region coordinates": "End Region Coordinates"}, "show chunk": "Show Chunk", "show region": "Show Region", "opposite coordinates": "Opposite Coordinates", "opposite chunk": "Opposite Chunk", "opposite region": "Opposite Region", "end opposite mode": {"_value": "End Opposite Mode", "normal": "Normal", "hidden": "Hidden"}, "scale": "Scale", "padding": "Padding", "alignment": {"_value": "Alignment", "left": "Left", "center": "Center", "right": "Right"}, "corner radius": "Corner Radius", "background": "Background", "background color": "Background Color", "background blur": "Background Blur", "label color": "Label Color", "value color": "Value Color"},
+      "game mode hud": {"_value": "Game Mode HUD", "display": {"label": "Game Mode", "unknown": "Unknown", "survival": "Survival", "creative": "Creative", "adventure": "Adventure", "spectator": "Spectator"}, "scale": "Scale", "padding": "Padding", "alignment": {"_value": "Alignment", "left": "Left", "center": "Center", "right": "Right"}, "corner radius": "Corner Radius", "background": "Background", "background color": "Background Color", "background blur": "Background Blur", "label color": "Label Color", "value color": "Value Color"},
+      "main hand item hud": {"_value": "Main Hand Item HUD", "display": {"empty": "Empty", "unbreakable": "Unbreakable"}, "scale": "Scale", "padding": "Padding", "alignment": {"_value": "Alignment", "left": "Left", "center": "Center", "right": "Right"}, "background": "Background", "background color": "Background Color", "item color": "Item Color", "durability color": "Durability Color"},
+      "off hand item hud": {"_value": "Off Hand Item HUD", "display": {"empty": "Empty", "unbreakable": "Unbreakable"}, "scale": "Scale", "padding": "Padding", "alignment": {"_value": "Alignment", "left": "Left", "center": "Center", "right": "Right"}, "background": "Background", "background color": "Background Color", "item color": "Item Color", "durability color": "Durability Color"},
+      "looking at hud": {"_value": "Looking At HUD", "display": {"label": "Looking At", "nothing": "Nothing"}, "scale": "Scale", "padding": "Padding", "alignment": {"_value": "Alignment", "left": "Left", "center": "Center", "right": "Right"}, "corner radius": "Corner Radius", "background": "Background", "background color": "Background Color", "background blur": "Background Blur", "label color": "Label Color", "value color": "Value Color"},
+      "breaking progress hud": {"_value": "Breaking Progress HUD", "display": {"label": "Breaking"}, "scale": "Scale", "padding": "Padding", "alignment": {"_value": "Alignment", "left": "Left", "center": "Center", "right": "Right"}, "corner radius": "Corner Radius", "background": "Background", "background color": "Background Color", "background blur": "Background Blur", "label color": "Label Color", "value color": "Value Color"},
+      "server hud": {"_value": "Server HUD", "display": {"label": "Server", "singleplayer": "Singleplayer"}, "scale": "Scale", "padding": "Padding", "alignment": {"_value": "Alignment", "left": "Left", "center": "Center", "right": "Right"}, "corner radius": "Corner Radius", "background": "Background", "background color": "Background Color", "background blur": "Background Blur", "label color": "Label Color", "value color": "Value Color"},
+      "weather hud": {"_value": "Weather HUD", "display": {"label": "Weather", "clear": "Clear", "rain": "Rain", "thunder": "Thunder"}, "scale": "Scale", "padding": "Padding", "alignment": {"_value": "Alignment", "left": "Left", "center": "Center", "right": "Right"}, "corner radius": "Corner Radius", "background": "Background", "background color": "Background Color", "background blur": "Background Blur", "label color": "Label Color", "value color": "Value Color"},
+      "biome hud": {"_value": "Biome HUD", "display": {"label": "Biome", "unknown": "Unknown"}, "scale": "Scale", "padding": "Padding", "alignment": {"_value": "Alignment", "left": "Left", "center": "Center", "right": "Right"}, "corner radius": "Corner Radius", "background": "Background", "background color": "Background Color", "background blur": "Background Blur", "label color": "Label Color", "value color": "Value Color"},
+      "world time hud": {"_value": "World Time HUD", "display": {"label": "World Time"}, "scale": "Scale", "padding": "Padding", "alignment": {"_value": "Alignment", "left": "Left", "center": "Center", "right": "Right"}, "corner radius": "Corner Radius", "background": "Background", "background color": "Background Color", "background blur": "Background Blur", "label color": "Label Color", "value color": "Value Color"},
+      "real time hud": {"_value": "Real Time HUD", "display": {"label": "Real Time"}, "scale": "Scale", "padding": "Padding", "alignment": {"_value": "Alignment", "left": "Left", "center": "Center", "right": "Right"}, "corner radius": "Corner Radius", "background": "Background", "background color": "Background Color", "background blur": "Background Blur", "label color": "Label Color", "value color": "Value Color"},
+      "rotation hud": {"_value": "Rotation HUD", "display": {"label": "Rotation", "direction": {"north": "North", "south": "South", "east": "East", "west": "West", "up": "Up", "down": "Down"}}, "scale": "Scale", "padding": "Padding", "alignment": {"_value": "Alignment", "left": "Left", "center": "Center", "right": "Right"}, "corner radius": "Corner Radius", "background": "Background", "background color": "Background Color", "background blur": "Background Blur", "label color": "Label Color", "value color": "Value Color"},
+      "armor hud": {
+        "_value": "Armor HUD",
+        "orientation": {
+          "_value": "Orientation",
+          "horizontal": "Horizontal",
+          "vertical": "Vertical"
+        },
+        "flip order": "Flip Order",
+        "show empty": "Show Empty",
+        "alignment": {
+          "_value": "Alignment",
+          "left": "Left",
+          "center": "Center",
+          "right": "Right"
+        },
+        "durability mode": {
+          "_value": "Durability Mode",
+          "bar": "Bar",
+          "remaining": "Remaining",
+          "percentage": "Percentage",
+          "hidden": "Hidden"
+        },
+        "scale": "Scale",
+        "gap": "Gap",
+        "background": "Background",
+        "background color": "Background Color"
+      },
+      "item counter hud": {
+        "_value": "Item Counter HUD",
+        "items": "Items",
+        "scale": "Scale",
+        "gap": "Gap",
+        "hide missing": "Hide Missing",
+        "background": "Background",
+        "background color": "Background Color"
+      },
+      "compass hud": {
+        "_value": "Compass HUD",
+        "width": "Width",
+        "scale": "Scale",
+        "primary color": "Primary Color",
+        "secondary color": "Secondary Color"
+      },
+      "hole hud": {
+        "_value": "Hole HUD",
+        "safe blocks": "Safe Blocks",
+        "scale": "Scale",
+        "rotate with player": "Rotate With Player",
+        "background": "Background",
+        "background color": "Background Color"
+      },
+      "lag notifier hud": {
+        "_value": "Lag Notifier HUD",
+        "threshold": "Threshold",
+        "scale": "Scale",
+        "alignment": {"_value": "Alignment", "left": "Left", "center": "Center", "right": "Right"},
+        "normal color": "Normal Color",
+        "warning color": "Warning Color",
+        "critical color": "Critical Color"
+      },
+      "player radar hud": {
+        "_value": "Player Radar HUD",
+        "display": {
+          "title": "Players",
+          "distance unit": "m",
+          "health unit": "hp",
+          "ping unit": "ms"
+        },
+        "limit": "Limit",
+        "show distance": "Show Distance",
+        "show health": "Show Health",
+        "show ping": "Show Ping",
+        "show friends": "Show Friends",
+        "scale": "Scale",
+        "title color": "Title Color",
+        "player color": "Player Color",
+        "friend color": "Friend Color",
+        "info color": "Info Color",
+        "background color": "Background Color"
+      },
+      "keyboard hud": {
+        "_value": "Keyboard HUD",
+        "scale": "Scale",
+        "show mouse": "Show Mouse",
+        "show cps": "Show CPS",
+        "pressed color": "Pressed Color",
+        "released color": "Released Color",
+        "text color": "Text Color"
+      },
+      "player model hud": {
+        "_value": "Player Model HUD",
+        "copy yaw": "Copy Yaw",
+        "copy pitch": "Copy Pitch",
+        "scale": "Scale",
+        "background": "Background",
+        "background color": "Background Color"
+      },
+      "map hud": {
+        "_value": "Map HUD",
+        "scale": "Scale",
+        "background": "Background",
+        "background color": "Background Color"
+      },
       "notifications": {
         "_value": "Notifications",
         "scale": "Scale",
@@ -1973,6 +2093,12 @@
       },
       "bps hud": {
         "_value": "BPS HUD",
+        "speed mode": {
+          "_value": "Speed Mode",
+          "horizontal": "Horizontal",
+          "alldirections": "All Directions"
+        },
+        "vertical speed": "Vertical Speed",
         "scale": "Scale",
         "corner radius": "Corner Radius",
         "background color": "Background Color",
@@ -2001,6 +2127,19 @@
       },
       "inventory hud": {
         "_value": "Inventory HUD",
+        "scale": "Scale",
+        "corner radius": "Corner Radius",
+        "background color": "Background Color",
+        "slot color": "Slot Color",
+        "drop shadow": "Drop Shadow",
+        "shadow blur": "Shadow Blur",
+        "shadow color": "Shadow Color",
+        "background blur": "Background Blur",
+        "blur strength": "Blur Strength",
+        "show count": "Show Count"
+      },
+      "container hud": {
+        "_value": "Container HUD",
         "scale": "Scale",
         "corner radius": "Corner Radius",
         "background color": "Background Color",
@@ -2115,6 +2254,7 @@
       "watermark": {
         "_value": "Watermark",
         "scale": "Scale",
+        "alignment": {"_value": "Alignment", "left": "Left", "center": "Center", "right": "Right"},
         "text color": "Text Color"
       }
     }

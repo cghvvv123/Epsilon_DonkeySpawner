@@ -8,6 +8,7 @@ import com.github.epsilon.settings.impl.BoolSetting;
 import com.github.epsilon.settings.impl.ColorSetting;
 import com.github.epsilon.settings.impl.DoubleSetting;
 import com.github.epsilon.settings.impl.IntSetting;
+import com.github.epsilon.settings.impl.EnumSetting;
 import com.google.common.base.Suppliers;
 import net.minecraft.client.DeltaTracker;
 import net.minecraft.util.Mth;
@@ -48,15 +49,25 @@ public class BPS extends HudModule {
     private final BoolSetting smoothNumber = boolSetting("Smooth Number", true);
     private final DoubleSetting numberDelay = doubleSetting("Number Delay", 0.15, 0.0, 0.5, 0.01, smoothNumber::getValue);
 
+    private enum SpeedMode {
+        Horizontal,
+        AllDirections
+    }
+
+    private final EnumSetting<SpeedMode> speedMode = enumSetting("Speed Mode", SpeedMode.Horizontal);
+    private final BoolSetting showVerticalSpeed = boolSetting("Vertical Speed", true);
+
     private static final int GRAPH_SIZE = 72;
     private final float[] graphValues = new float[GRAPH_SIZE];
     private int graphIndex;
     private double lastX;
+    private double lastY;
     private double lastZ;
     private long lastUpdateTime;
     private float currentBps;
     private float animatedBps;
     private float highestBps;
+    private float verticalBps;
     private boolean initialized;
 
     private String previousBpsText = "0.0";
@@ -145,6 +156,9 @@ public class BPS extends HudModule {
 
         String peakText = "Maximum " + formatBps(highestBps);
         scope.text(peakText, this.x + 9f * s, this.y + 44f * s, peakScale, textMuted.getValue());
+        if (showVerticalSpeed.getValue()) {
+            scope.text("Vertical " + formatBps(verticalBps), this.x + 9f * s, this.y + 51f * s, peakScale, textMuted.getValue());
+        }
 
         float graphX = this.x + 62f * s;
         float graphY = this.y + 15f * s;
@@ -225,11 +239,13 @@ public class BPS extends HudModule {
         long now = System.currentTimeMillis();
 
         double x = mc.player.getX();
+        double y = mc.player.getY();
         double z = mc.player.getZ();
 
         if (!initialized) {
             initialized = true;
             lastX = x;
+            lastY = y;
             lastZ = z;
             lastUpdateTime = now;
             currentBps = 0f;
@@ -248,13 +264,18 @@ public class BPS extends HudModule {
         }
 
         double dx = x - lastX;
+        double dy = y - lastY;
         double dz = z - lastZ;
-        double distance = Math.sqrt(dx * dx + dz * dz);
+        double distance = speedMode.is(SpeedMode.Horizontal)
+                ? Math.sqrt(dx * dx + dz * dz)
+                : Math.sqrt(dx * dx + dy * dy + dz * dz);
         float rawBps = (float) (distance / (diff / 1000.0));
+        verticalBps = (float) (Math.abs(dy) / (diff / 1000.0));
 
         if (rawBps > 80f || mc.player.isDeadOrDying()) {
             rawBps = 0f;
             lastX = x;
+            lastY = y;
             lastZ = z;
             lastUpdateTime = now;
         }
@@ -269,6 +290,7 @@ public class BPS extends HudModule {
         pushGraphValue(currentBps);
 
         lastX = x;
+        lastY = y;
         lastZ = z;
         lastUpdateTime = now;
     }
@@ -340,9 +362,11 @@ public class BPS extends HudModule {
     private void resetBps() {
         initialized = false;
         lastX = 0;
+        lastY = 0;
         lastZ = 0;
         lastUpdateTime = 0L;
         currentBps = 0f;
+        verticalBps = 0f;
         animatedBps = 0f;
         highestBps = 0f;
         graphIndex = 0;

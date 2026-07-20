@@ -15,11 +15,14 @@ import com.github.epsilon.gui.lib.render.UiRenderBatch;
 import com.github.epsilon.gui.lib.scene.UiLayer;
 import com.github.epsilon.gui.lib.scene.UiScene;
 import com.github.epsilon.gui.panel.PanelScreen;
+import com.github.epsilon.gui.panel.popup.PanelPopupHost;
+import com.github.epsilon.gui.panel.popup.RegistryListSelectPopup;
 import com.github.epsilon.gui.theme.EpsilonUiTheme;
 import com.github.epsilon.gui.theme.MD3Theme;
 import com.github.epsilon.holders.HudElementHolder;
 import com.github.epsilon.managers.Managers;
 import com.github.epsilon.modules.impl.ClientSetting;
+import com.github.epsilon.settings.impl.RegistryListSetting;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.input.CharacterEvent;
@@ -54,6 +57,7 @@ public class HudEditorScreen extends Screen {
     private final TextRenderer textMetrics = TextRenderer.create();
     private final UiTextMetrics uiTextMetrics = new EditorTextMetrics();
     private final UiScene scene = new UiScene(EpsilonUiTheme.INSTANCE);
+    private final PanelPopupHost popupHost = new PanelPopupHost();
     private UiRenderBatch editorBatch;
     private UiTree.Scope editorScope;
     private int editorLayer;
@@ -84,12 +88,24 @@ public class HudEditorScreen extends Screen {
 
         int epsilonMouseX = LuminRenderSystem.toEpsilonMouseX(mouseX);
         int epsilonMouseY = LuminRenderSystem.toEpsilonMouseY(mouseY);
+        popupHost.setOverlayBounds(new UiRect(0.0f, 0.0f, LuminRenderSystem.getScaledWidth(), LuminRenderSystem.getScaledHeight()));
         drawEditor(graphics, epsilonMouseX, epsilonMouseY);
         scene.endFrame();
+
+        if (popupHost.getActivePopup() != null) {
+            scene.beginFrame();
+            popupHost.render(graphics, scene.batch(UiLayer.POPUP), epsilonMouseX, epsilonMouseY,
+                    minecraft.getDeltaTracker().getGameTimeDeltaPartialTick(true));
+            scene.flush();
+            popupHost.flush();
+            scene.clear();
+        }
 
         LuminRenderSystem.setActiveTarget(null);
         graphics.blit(renderTarget.getIdentifier(), 0, 0, window.getGuiScaledWidth(), window.getGuiScaledHeight(), 0, 1, 1, 0);
         drawElementOverlays(graphics);
+        popupHost.extractOverlay(graphics, epsilonMouseX, epsilonMouseY,
+                minecraft.getDeltaTracker().getGameTimeDeltaPartialTick(true));
     }
 
     private void drawEditor(GuiGraphicsExtractor graphics, int mouseX, int mouseY) {
@@ -315,6 +331,7 @@ public class HudEditorScreen extends Screen {
 
     @Override
     public boolean keyPressed(KeyEvent event) {
+        if (popupHost.keyPressed(event)) return true;
         if (hudPanel != null && hudPanel.hasActiveInput() && hudPanel.keyPressed(event.key(), event.scancode(), event.modifiers())) {
             return true;
         }
@@ -333,6 +350,7 @@ public class HudEditorScreen extends Screen {
 
     @Override
     public boolean charTyped(CharacterEvent event) {
+        if (popupHost.charTyped(event)) return true;
         String typed = event.codepointAsString();
         if (hudPanel != null && !typed.isEmpty() && hudPanel.charTyped(typed)) {
             return true;
@@ -343,6 +361,7 @@ public class HudEditorScreen extends Screen {
     @Override
     public boolean mouseClicked(MouseButtonEvent event, boolean isDoubleClick) {
         MouseButtonEvent epsilonEvent = LuminRenderSystem.toEpsilonMouseEvent(event);
+        if (popupHost.mouseClicked(epsilonEvent, isDoubleClick)) return true;
         if (hudPanel != null && hudPanel.mouseClicked(epsilonEvent.x(), epsilonEvent.y(), epsilonEvent.button())) {
             validateSelection();
             return true;
@@ -367,6 +386,7 @@ public class HudEditorScreen extends Screen {
     @Override
     public boolean mouseReleased(MouseButtonEvent event) {
         MouseButtonEvent epsilonEvent = LuminRenderSystem.toEpsilonMouseEvent(event);
+        if (popupHost.mouseReleased(epsilonEvent)) return true;
         if (draggingElement != null && epsilonEvent.button() == 0) {
             draggingElement = null;
             currentSnap = SnapInfo.none();
@@ -381,6 +401,7 @@ public class HudEditorScreen extends Screen {
     @Override
     public boolean mouseDragged(MouseButtonEvent event, double mouseX, double mouseY) {
         MouseButtonEvent epsilonEvent = LuminRenderSystem.toEpsilonMouseEvent(event);
+        if (popupHost.mouseDragged(epsilonEvent, epsilonEvent.x(), epsilonEvent.y())) return true;
         if (draggingElement != null) {
             double epsilonMouseX = LuminRenderSystem.toEpsilonMouseX(event.x());
             double epsilonMouseY = LuminRenderSystem.toEpsilonMouseY(event.y());
@@ -397,6 +418,7 @@ public class HudEditorScreen extends Screen {
     public boolean mouseScrolled(double mouseX, double mouseY, double scrollX, double scrollY) {
         double epsilonMouseX = LuminRenderSystem.toEpsilonMouseX(mouseX);
         double epsilonMouseY = LuminRenderSystem.toEpsilonMouseY(mouseY);
+        if (popupHost.mouseScrolled(epsilonMouseX, epsilonMouseY, scrollX, scrollY)) return true;
         if (hudPanel != null && hudPanel.mouseScrolled(epsilonMouseX, epsilonMouseY, scrollY)) {
             return true;
         }
@@ -542,6 +564,7 @@ public class HudEditorScreen extends Screen {
 
     @Override
     public void onClose() {
+        popupHost.close();
         super.onClose();
 
         minecraft.setScreen(switch (ClientSetting.INSTANCE.guiMode.getValue()) {
@@ -550,9 +573,18 @@ public class HudEditorScreen extends Screen {
         });
     }
 
+    public void openRegistryListSettingPopup(RegistryListSetting<?> setting) {
+        UiRect bounds = popupHost.getCenteredBounds(
+                Math.min(360.0f, LuminRenderSystem.getScaledWidth() - 28.0f),
+                Math.min(300.0f, LuminRenderSystem.getScaledHeight() - 28.0f)
+        );
+        popupHost.open(RegistryListSelectPopup.create(bounds, setting));
+    }
+
     @Override
     public void removed() {
         super.removed();
+        popupHost.close();
         draggingElement = null;
         currentSnap = SnapInfo.none();
     }

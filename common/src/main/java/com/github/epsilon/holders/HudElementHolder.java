@@ -12,6 +12,7 @@ import com.github.epsilon.gui.lib.scene.UiLayer;
 import com.github.epsilon.gui.lib.scene.UiScene;
 import com.github.epsilon.gui.theme.EpsilonUiTheme;
 import com.github.epsilon.utils.client.ClientUtils;
+import com.github.epsilon.utils.player.ContainerItemUtils;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -24,6 +25,7 @@ public class HudElementHolder {
 
     private HudElementHolder() {
         EventBus.INSTANCE.subscribe(this);
+        EventBus.INSTANCE.subscribe(ContainerItemUtils.class);
     }
 
     private final List<HudModule> elements = new ArrayList<>();
@@ -31,9 +33,36 @@ public class HudElementHolder {
 
     public void initElements() {
         addElement(Notifications.INSTANCE);
+        addElement(InfoHUD.FpsHUD.INSTANCE);
+        addElement(InfoHUD.TpsHUD.INSTANCE);
+        addElement(InfoHUD.PingHUD.INSTANCE);
+        addElement(InfoHUD.SpeedHUD.INSTANCE);
+        addElement(InfoHUD.VerticalSpeedHUD.INSTANCE);
+        addElement(InfoHUD.CoordinatesHUD.INSTANCE);
+        addElement(InfoHUD.GameModeHUD.INSTANCE);
+        addElement(HandItemHUD.MainHandHUD.INSTANCE);
+        addElement(HandItemHUD.OffHandHUD.INSTANCE);
+        addElement(InfoHUD.LookingAtHUD.INSTANCE);
+        addElement(InfoHUD.BreakingProgressHUD.INSTANCE);
+        addElement(InfoHUD.ServerHUD.INSTANCE);
+        addElement(InfoHUD.WeatherHUD.INSTANCE);
+        addElement(InfoHUD.BiomeHUD.INSTANCE);
+        addElement(InfoHUD.WorldTimeHUD.INSTANCE);
+        addElement(InfoHUD.RealTimeHUD.INSTANCE);
+        addElement(InfoHUD.RotationHUD.INSTANCE);
+        addElement(ArmorHUD.INSTANCE);
+        addElement(ItemCounterHUD.INSTANCE);
+        addElement(CompassHUD.INSTANCE);
+        addElement(HoleHUD.INSTANCE);
+        addElement(LagNotifierHUD.INSTANCE);
+        addElement(PlayerRadarHUD.INSTANCE);
+        addElement(KeyboardHUD.INSTANCE);
+        addElement(PlayerModelHUD.INSTANCE);
+        addElement(MapHUD.INSTANCE);
         addElement(BPS.INSTANCE);
         addElement(MTF.INSTANCE);
         addElement(Inventory.INSTANCE);
+        addElement(ContainerHUD.INSTANCE);
         addElement(ModuleList.INSTANCE);
         addElement(Potions.INSTANCE);
         addElement(ScaffoldBlock.INSTANCE);
