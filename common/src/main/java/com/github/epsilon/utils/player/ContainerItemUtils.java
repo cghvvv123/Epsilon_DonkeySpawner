@@ -18,6 +18,8 @@ import net.minecraft.world.inventory.ChestMenu;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
+import net.minecraft.world.item.component.BundleContents;
+import net.minecraft.world.item.component.DyedItemColor;
 import net.minecraft.world.item.component.TypedEntityData;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.ShulkerBoxBlock;
@@ -25,6 +27,10 @@ import net.minecraft.world.level.block.entity.BlockEntityType;
 
 import java.awt.*;
 import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
+
+import net.minecraft.world.item.DyeColor;
 
 import static com.github.epsilon.Constants.mc;
 
@@ -33,6 +39,28 @@ public final class ContainerItemUtils {
     private static final int INVENTORY_SIZE = 27;
     private static final NonNullList<ItemStack> ENDER_CHEST_ITEMS = NonNullList.withSize(INVENTORY_SIZE, ItemStack.EMPTY);
     private static boolean enderChestKnown;
+
+    // 彩色收纳袋是各自独立的物品（颜色烤进贴图，不带 DYED_COLOR 组件），需按物品映射到对应 DyeColor 取色，
+    // 与潜影盒用 DyeColor.getTextureDiffuseColor() 取色同思路。基础收纳袋回落到默认皮革色。
+    private static final Map<net.minecraft.world.item.Item, DyeColor> BUNDLE_COLORS = new HashMap<>();
+    static {
+        BUNDLE_COLORS.put(Items.WHITE_BUNDLE, DyeColor.WHITE);
+        BUNDLE_COLORS.put(Items.ORANGE_BUNDLE, DyeColor.ORANGE);
+        BUNDLE_COLORS.put(Items.MAGENTA_BUNDLE, DyeColor.MAGENTA);
+        BUNDLE_COLORS.put(Items.LIGHT_BLUE_BUNDLE, DyeColor.LIGHT_BLUE);
+        BUNDLE_COLORS.put(Items.YELLOW_BUNDLE, DyeColor.YELLOW);
+        BUNDLE_COLORS.put(Items.LIME_BUNDLE, DyeColor.LIME);
+        BUNDLE_COLORS.put(Items.PINK_BUNDLE, DyeColor.PINK);
+        BUNDLE_COLORS.put(Items.GRAY_BUNDLE, DyeColor.GRAY);
+        BUNDLE_COLORS.put(Items.LIGHT_GRAY_BUNDLE, DyeColor.LIGHT_GRAY);
+        BUNDLE_COLORS.put(Items.CYAN_BUNDLE, DyeColor.CYAN);
+        BUNDLE_COLORS.put(Items.PURPLE_BUNDLE, DyeColor.PURPLE);
+        BUNDLE_COLORS.put(Items.BLUE_BUNDLE, DyeColor.BLUE);
+        BUNDLE_COLORS.put(Items.BROWN_BUNDLE, DyeColor.BROWN);
+        BUNDLE_COLORS.put(Items.GREEN_BUNDLE, DyeColor.GREEN);
+        BUNDLE_COLORS.put(Items.RED_BUNDLE, DyeColor.RED);
+        BUNDLE_COLORS.put(Items.BLACK_BUNDLE, DyeColor.BLACK);
+    }
 
     private ContainerItemUtils() {
     }
@@ -65,9 +93,13 @@ public final class ContainerItemUtils {
     }
 
     public static boolean isContainer(ItemStack stack) {
-        if (stack == null || stack.isEmpty() || stack.is(Items.BUNDLE)) return false;
+        if (stack == null || stack.isEmpty()) return false;
         if (stack.is(Items.ENDER_CHEST)) return enderChestKnown;
-        return stack.has(DataComponents.CONTAINER) || hasBlockEntityItems(stack);
+        return stack.has(DataComponents.CONTAINER) || stack.has(DataComponents.BUNDLE_CONTENTS) || hasBlockEntityItems(stack);
+    }
+
+    public static boolean isBundle(ItemStack stack) {
+        return stack != null && !stack.isEmpty() && stack.has(DataComponents.BUNDLE_CONTENTS);
     }
 
     public static void copyItems(ItemStack stack, ItemStack[] output) {
@@ -89,6 +121,15 @@ public final class ContainerItemUtils {
             return;
         }
 
+        BundleContents bundle = stack.get(DataComponents.BUNDLE_CONTENTS);
+        if (bundle != null) {
+            var items = bundle.itemCopyStream().toList();
+            for (int i = 0; i < items.size() && i < output.length; i++) {
+                output[i] = items.get(i);
+            }
+            return;
+        }
+
         TypedEntityData<BlockEntityType<?>> blockEntityData = stack.get(DataComponents.BLOCK_ENTITY_DATA);
         if (blockEntityData == null || mc.player == null) return;
         ListTag itemTags = blockEntityData.copyTagWithoutId().getListOrEmpty("Items");
@@ -104,6 +145,14 @@ public final class ContainerItemUtils {
         }
     }
 
+    public static int getItemCount(ItemStack stack) {
+        if (isBundle(stack)) {
+            BundleContents bundle = stack.get(DataComponents.BUNDLE_CONTENTS);
+            return bundle == null ? 0 : bundle.size();
+        }
+        return INVENTORY_SIZE;
+    }
+
     public static Color backgroundColor(ItemStack stack) {
         if (stack.is(Items.ENDER_CHEST)) return new Color(74, 48, 112, 220);
         if (stack.getItem() instanceof BlockItem blockItem) {
@@ -113,6 +162,14 @@ public final class ContainerItemUtils {
                 int color = shulkerBox.getColor().getTextureDiffuseColor();
                 return new Color((color >> 16) & 0xFF, (color >> 8) & 0xFF, color & 0xFF, 220);
             }
+        }
+        if (isBundle(stack)) {
+            // 收纳袋颜色按物品对应的 DyeColor 取（与潜影盒取 DyeColor.getTextureDiffuseColor() 同思路）；
+            // 彩色收纳袋颜色烤进贴图、不带 DYED_COLOR 组件，故不能用 DYED_COLOR 取色，否则会回退默认皮革色。
+            // 基础（未染色）收纳袋在映射中无对应项，回落到默认皮革色。
+            DyeColor dye = BUNDLE_COLORS.get(stack.getItem());
+            int color = dye != null ? dye.getTextureDiffuseColor() : DyedItemColor.LEATHER_COLOR;
+            return new Color((color >> 16) & 0xFF, (color >> 8) & 0xFF, color & 0xFF, 220);
         }
         var key = BuiltInRegistries.ITEM.getKey(stack.getItem());
         int hash = key == null ? 0 : key.hashCode();

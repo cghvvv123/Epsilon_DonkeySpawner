@@ -32,7 +32,10 @@ public class ContainerHUD extends HudModule {
     private static final float SLOT_SIZE = 17.0f;
     private static final float SLOT_GAP = 1.5f;
     private static final float PADDING = 4.5f;
-    private final ItemStack[] containerItems = new ItemStack[27];
+    private static final int COLS = 9;
+    private static final int MAX_ROWS = 11;//mc原版理论所需要的行数极限
+    private static final int MAX_SLOTS = COLS * MAX_ROWS;
+    private final ItemStack[] containerItems = new ItemStack[MAX_SLOTS];
 
     private ContainerHUD() {
         super("Container HUD", 0f, 0f, 180f, 80f);
@@ -49,22 +52,26 @@ public class ContainerHUD extends HudModule {
         float gap = SLOT_GAP * s;
         float padding = PADDING * s;
         float radius = cornerRadius.getValue().floatValue() * s;
-        float totalWidth = padding * 2f + 9 * slotSize + 8 * gap;
-        float totalHeight = padding * 2f + 3 * slotSize + 2 * gap;
 
         ItemStack heldContainer = ContainerItemUtils.findHeldContainer();
         if (heldContainer.isEmpty() && !(mc.screen instanceof HudEditorScreen)) {
-            setBounds(totalWidth, totalHeight);
+            setBounds(180f, 80f);
             return;
         }
+
+        int rows = computeRows(heldContainer);
+
+        float totalWidth = padding * 2f + COLS * slotSize + (COLS - 1) * gap;
+        float totalHeight = padding * 2f + rows * slotSize + (rows - 1) * gap;
+
         Color color = heldContainer.isEmpty() ? backgroundColor.getValue() : ContainerItemUtils.backgroundColor(heldContainer);
         if (backgroundBlur.getValue()) BlurShader.INSTANCE.render(this.x, this.y, totalWidth, totalHeight, radius, blurStrength.getValue());
         if (drawShadow.getValue()) renderScope().shadow(this.x, this.y, totalWidth, totalHeight, radius,
                 shadowBlur.getValue().floatValue(), shadowColor.getValue());
         renderScope().roundRect(this.x, this.y, totalWidth, totalHeight, radius, color);
 
-        for (int row = 0; row < 3; row++) {
-            for (int col = 0; col < 9; col++) {
+        for (int row = 0; row < rows; row++) {
+            for (int col = 0; col < COLS; col++) {
                 float slotX = this.x + padding + col * (slotSize + gap);
                 float slotY = this.y + padding + row * (slotSize + gap);
                 renderScope().roundRect(slotX, slotY, slotSize, slotSize, 2.0f * s, slotColor.getValue());
@@ -80,13 +87,16 @@ public class ContainerHUD extends HudModule {
         if (container.isEmpty()) return;
         ContainerItemUtils.copyItems(container, containerItems);
 
+        int rows = computeRows(container);
         float s = scale.getValue().floatValue();
         float slotSize = SLOT_SIZE * s;
         float gap = SLOT_GAP * s;
         float padding = PADDING * s;
-        for (int row = 0; row < 3; row++) {
-            for (int col = 0; col < 9; col++) {
-                ItemStack stack = containerItems[row * 9 + col];
+        for (int row = 0; row < rows; row++) {
+            for (int col = 0; col < COLS; col++) {
+                int index = row * COLS + col;
+                if (index >= containerItems.length) break;
+                ItemStack stack = containerItems[index];
                 if (stack.isEmpty()) continue;
                 float slotX = this.x + padding + col * (slotSize + gap);
                 float slotY = this.y + padding + row * (slotSize + gap);
@@ -100,5 +110,18 @@ public class ContainerHUD extends HudModule {
                 graphics.pose().popMatrix();
             }
         }
+    }
+
+    private int computeRows(ItemStack container) {
+        if (container.isEmpty()) {
+            return 3; // 编辑器占位预览：保持 3 行
+        }
+        int itemCount = ContainerItemUtils.getItemCount(container);
+        // 收纳袋 ≤ 9*3 = 27 个物品时固定 3 行（与潜影盒/末影箱一致）；仅当超过 27 个才动态增加行数
+        if (itemCount <= COLS * 3) {
+            return 3;
+        }
+        int rows = (itemCount + COLS - 1) / COLS; // ceil(itemCount / COLS)
+        return Math.min(rows, MAX_ROWS);
     }
 }
