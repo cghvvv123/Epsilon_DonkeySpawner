@@ -62,8 +62,8 @@ public abstract class HandItemHUD extends HudModule {
         String durability = durabilityText(stack);
         float itemWidth = renderer.getWidth(itemName, textScale);
         float durabilityWidth = renderer.getWidth(durability, textScale);
-        float contentWidth = Math.max(itemWidth, durabilityWidth);
-        float width = contentWidth + pad * 2f;
+        // 面板宽度固定，不随文字内容变化；文字可超出框范围
+        float width = 150f;
         float height = pad * 2f + renderer.getHeight(textScale) * 2f;
         setBounds(width, height);
         if (background.getValue()) renderScope().roundRect(this.x, this.y, width, height, 4f, backgroundColor.getValue());
