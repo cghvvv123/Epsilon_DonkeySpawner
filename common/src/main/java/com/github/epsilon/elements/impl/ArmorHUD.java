@@ -167,7 +167,7 @@ public class ArmorHUD extends HudModule {
         for (EquipmentSlot slot : equipmentSlots()) {
             ItemStack stack = mc.player.getItemBySlot(slot);
             if (stack.isEmpty() && showEmpty.getValue()) stack = Items.BARRIER.getDefaultInstance();
-            String detail = detailedDurability(stack);
+            String detail = maxDetailedDurability(stack);
             if (detail != null) width = Math.max(width, renderer.getWidth(detail, textScale));
         }
         return width;
@@ -179,6 +179,14 @@ public class ArmorHUD extends HudModule {
         int remaining = stack.getMaxDamage() - stack.getDamageValue();
         int percentage = Math.round(remaining * 100f / stack.getMaxDamage());
         return remaining + " / " + stack.getMaxDamage() + " (" + percentage + "%)";
+    }
+
+    // 满耐久文字（用于面板宽度计算，保证耐久变化时面板不 resize）
+    private String maxDetailedDurability(ItemStack stack) {
+        if (stack.isEmpty()) return null;
+        if (!stack.isDamageableItem() || stack.getMaxDamage() <= 0) return "N/A";
+        int max = stack.getMaxDamage();
+        return max + " / " + max + " (100%)";
     }
 
     private Color durabilityColor(ItemStack stack) {
