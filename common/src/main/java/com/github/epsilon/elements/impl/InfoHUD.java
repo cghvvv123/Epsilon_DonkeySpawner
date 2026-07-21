@@ -21,6 +21,7 @@ import net.minecraft.network.protocol.game.ClientboundSetTimePacket;
 import net.minecraft.util.Mth;
 import net.minecraft.world.level.GameType;
 import net.minecraft.world.level.Level;
+import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.EntityHitResult;
 import net.minecraft.world.phys.HitResult;
@@ -351,18 +352,20 @@ public abstract class InfoHUD extends HudModule {
             float spacing = 2f;
             BlockPos pos = mc.player.blockPosition();
             String mainValue = coordinates(pos);
+            // 主世界坐标绿、下界红、末地黄；区块/区域坐标保持原白色（valueColor）格式
+            Color mainColor = dimensionColor(mc.level.dimension());
             List<CoordinateLine> lines = new ArrayList<>();
-            lines.add(new CoordinateLine(coordinatesLabel(), mainValue, mainScale));
-            if (showChunk.getValue()) lines.add(new CoordinateLine(chunkLabel(), chunkCoordinates(pos), subScale));
-            if (showRegion.getValue()) lines.add(new CoordinateLine(regionLabel(), regionCoordinates(pos), subScale));
+            lines.add(new CoordinateLine(coordinatesLabel(), mainValue, mainScale, mainColor));
+            if (showChunk.getValue()) lines.add(new CoordinateLine(chunkLabel(), chunkCoordinates(pos), subScale, valueColor.getValue()));
+            if (showRegion.getValue()) lines.add(new CoordinateLine(regionLabel(), regionCoordinates(pos), subScale, valueColor.getValue()));
 
             CoordinateLine opposite = oppositeLine(pos);
             if (opposite != null) {
                 lines.add(opposite);
                 if (oppositeChunk.getValue()) lines.add(new CoordinateLine(oppositeLabel("Chunk"),
-                        chunkCoordinates(oppositePosition(pos)), subScale));
+                        chunkCoordinates(oppositePosition(pos)), subScale, valueColor.getValue()));
                 if (oppositeRegion.getValue()) lines.add(new CoordinateLine(oppositeLabel("Region"),
-                        regionCoordinates(oppositePosition(pos)), subScale));
+                        regionCoordinates(oppositePosition(pos)), subScale, valueColor.getValue()));
             }
 
             float panelHeight = pad * 2f;
@@ -378,13 +381,13 @@ public abstract class InfoHUD extends HudModule {
             drawBackground(panelWidth, panelHeight);
             float y = this.y + pad;
             for (CoordinateLine line : lines) {
-                renderLine(renderer, line.label(), line.value(), line.scale(), y, panelWidth);
+                renderLine(renderer, line.label(), line.value(), line.scale(), y, panelWidth, line.valueColor());
                 y += renderer.getHeight(line.scale()) + spacing;
             }
             setBounds(panelWidth, panelHeight);
         }
 
-        private void renderLine(TextRenderer renderer, String lineLabel, String lineValue, float textScale, float y, float panelWidth) {
+        private void renderLine(TextRenderer renderer, String lineLabel, String lineValue, float textScale, float y, float panelWidth, Color valueColor) {
             float gap = renderer.getWidth(" ", textScale);
             float labelWidth = renderer.getWidth(lineLabel, textScale);
             float colonWidth = renderer.getWidth(":", textScale);
@@ -392,7 +395,7 @@ public abstract class InfoHUD extends HudModule {
             float x = alignedX(panelWidth, contentWidth, padding.getValue().floatValue());
             renderScope().text(lineLabel, x, y, textScale, labelColor.getValue());
             renderScope().text(":", x + labelWidth, y, textScale, labelColor.getValue());
-            renderScope().text(lineValue, x + labelWidth + colonWidth + gap, y, textScale, valueColor.getValue());
+            renderScope().text(lineValue, x + labelWidth + colonWidth + gap, y, textScale, valueColor);
         }
 
         private String coordinates(BlockPos pos) {
@@ -413,38 +416,44 @@ public abstract class InfoHUD extends HudModule {
 
         private String chunkCoordinates(BlockPos pos) {
             int x = Math.floorDiv(pos.getX(), 16);
-            int y = Math.floorDiv(pos.getY(), 16);
             int z = Math.floorDiv(pos.getZ(), 16);
-            return x + " " + y + " " + z + " (" + Math.floorMod(pos.getX(), 16) + " " + Math.floorMod(pos.getY(), 16) + " " + Math.floorMod(pos.getZ(), 16) + ")";
+            return x +  " " + z + " (" + Math.floorMod(pos.getX(), 16) +  " " + Math.floorMod(pos.getZ(), 16) + ")";
         }
 
         private String regionCoordinates(BlockPos pos) {
             int x = Math.floorDiv(pos.getX(), 512);
-            int y = Math.floorDiv(pos.getY(), 512);
             int z = Math.floorDiv(pos.getZ(), 512);
-            return x + " " + y + " " + z + " (" + Math.floorMod(pos.getX(), 512) + " " + Math.floorMod(pos.getY(), 512) + " " + Math.floorMod(pos.getZ(), 512) + ")";
+            return x + " "  + z + " (" + Math.floorMod(pos.getX(), 512) +  " " + Math.floorMod(pos.getZ(), 512) + ")";
         }
 
         private CoordinateLine oppositeLine(BlockPos pos) {
             if (!oppositeCoordinates.getValue()) return null;
 
             double x = pos.getX();
-            double y = pos.getY();
             double z = pos.getZ();
-            String label;
+            ResourceKey<Level> oppositeDim;
             if (Level.OVERWORLD.equals(mc.level.dimension())) {
-                label = "Nether Coordinates";
+                oppositeDim = Level.NETHER;
                 x /= 8.0;
                 z /= 8.0;
             } else if (Level.NETHER.equals(mc.level.dimension())) {
-                label = "Overworld Coordinates";
+                oppositeDim = Level.OVERWORLD;
                 x *= 8.0;
                 z *= 8.0;
             } else {
                 if (endOppositeMode.getValue() == EndOppositeMode.Hidden) return null;
-                label = "End Coordinates";
+                oppositeDim = Level.END;
             }
-            return new CoordinateLine(oppositeLabel(""), coordinates(BlockPos.containing(x, y, z)), scale.getValue().floatValue());
+            return new CoordinateLine(oppositeLabel(""), coordinates(BlockPos.containing(x, pos.getY(), z)),
+                    scale.getValue().floatValue(), dimensionColor(oppositeDim));
+        }
+
+        // 按维度返回坐标颜色：主世界绿、下界红、末地黄（黄白）
+        private Color dimensionColor(ResourceKey<Level> dimension) {
+            if (Level.NETHER.equals(dimension)) return new Color(255, 95, 95);
+            if (Level.END.equals(dimension)) return new Color(255, 235, 95);
+            if (Level.OVERWORLD.equals(dimension)) return new Color(95, 230, 130);
+            return new Color(255, 255, 255);
         }
 
         private String oppositeLabel(String kind) {
@@ -470,7 +479,6 @@ public abstract class InfoHUD extends HudModule {
 
         private BlockPos oppositePosition(BlockPos pos) {
             double x = pos.getX();
-            double y = pos.getY();
             double z = pos.getZ();
             if (Level.OVERWORLD.equals(mc.level.dimension())) {
                 x /= 8.0;
@@ -479,10 +487,10 @@ public abstract class InfoHUD extends HudModule {
                 x *= 8.0;
                 z *= 8.0;
             }
-            return BlockPos.containing(x, y, z);
+            return BlockPos.containing(x, pos.getY(), z);
         }
 
-        private record CoordinateLine(String label, String value, float scale) {
+        private record CoordinateLine(String label, String value, float scale, Color valueColor) {
         }
     }
 
