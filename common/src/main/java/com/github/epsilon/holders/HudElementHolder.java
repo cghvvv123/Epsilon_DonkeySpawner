@@ -37,7 +37,6 @@ public class HudElementHolder {
         addElement(InfoHUD.TpsHUD.INSTANCE);
         addElement(InfoHUD.PingHUD.INSTANCE);
         addElement(InfoHUD.SpeedHUD.INSTANCE);
-        addElement(InfoHUD.VerticalSpeedHUD.INSTANCE);
         addElement(InfoHUD.CoordinatesHUD.INSTANCE);
         addElement(InfoHUD.GameModeHUD.INSTANCE);
         addElement(HandItemHUD.MainHandHUD.INSTANCE);

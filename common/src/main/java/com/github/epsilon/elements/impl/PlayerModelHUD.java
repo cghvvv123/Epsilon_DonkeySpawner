@@ -41,8 +41,11 @@ public class PlayerModelHUD extends HudModule {
         if (mc.player == null) return;
 
         float s = scale.getValue().floatValue();
-        // PIP 实体状态不会继承 GuiGraphicsExtractor 当前的 pose 缩放，始终显式转换到 Minecraft GUI 坐标。
-        float coordinateScale = (float) (LuminRenderSystem.getGuiScale() / mc.getWindow().getGuiScale());
+        boolean inEditor = mc.screen instanceof HudEditorScreen;
+        // 编辑器使用原版 GUI 投影，普通 HUD 使用 Epsilon 投影；PIP 状态本身不会继承外层 pose。
+        float coordinateScale = inEditor
+                ? (float) (LuminRenderSystem.getGuiScale() / mc.gameRenderer.getGameRenderState().windowRenderState.guiScale)
+                : 1f;
         int x0 = Math.round(this.x * coordinateScale);
         int y0 = Math.round(this.y * coordinateScale);
         int x1 = Math.round((this.x + 60f * s) * coordinateScale);
@@ -54,7 +57,7 @@ public class PlayerModelHUD extends HudModule {
         float centerY = (y0 + y1) / 2f;
         float fakeMouseX = centerX - (float) Math.tan(Math.toRadians(Mth.clamp(yaw, -85f, 85f) / 20f)) * 40f;
         float fakeMouseY = centerY - (float) Math.tan(Math.toRadians(Mth.clamp(pitch, -85f, 85f) / 20f)) * 40f;
-        if (!(mc.screen instanceof HudEditorScreen)) graphics.nextStratum();
+        if (!inEditor) graphics.nextStratum();
         InventoryScreen.extractEntityInInventoryFollowsMouse(graphics, x0, y0, x1, y1,
                 Math.round(30f * s * coordinateScale), 0.0625f, fakeMouseX, fakeMouseY, mc.player);
     }

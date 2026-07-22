@@ -15,7 +15,6 @@ import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.multiplayer.PlayerInfo;
 import net.minecraft.client.multiplayer.ServerData;
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.Direction;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.protocol.game.ClientboundSetTimePacket;
 import net.minecraft.util.Mth;
@@ -42,11 +41,6 @@ public abstract class InfoHUD extends HudModule {
     protected enum SpeedMode {
         Horizontal,
         AllDirections
-    }
-
-    protected enum EndOppositeMode {
-        Normal,
-        Hidden
     }
 
     protected enum HorizontalAlignment {
@@ -157,17 +151,6 @@ public abstract class InfoHUD extends HudModule {
         };
     }
 
-    protected final String lookingAt() {
-        HitResult hit = mc.hitResult;
-        if (hit instanceof BlockHitResult blockHit) {
-            BlockPos pos = blockHit.getBlockPos();
-            return mc.level.getBlockState(pos).getBlock().getName().getString()
-                    + " (" + pos.getX() + ", " + pos.getY() + ", " + pos.getZ() + ")";
-        }
-        if (hit instanceof EntityHitResult entityHit) return entityHit.getEntity().getName().getString();
-        return displayText("display.nothing", "Nothing");
-    }
-
     protected final String breakingProgress() {
         if (mc.gameMode == null || !mc.gameMode.isDestroying()) return "0%";
         return Mth.clamp(Math.round(mc.gameMode.destroyProgress * 100.0f), 0, 100) + "%";
@@ -197,10 +180,23 @@ public abstract class InfoHUD extends HudModule {
     }
 
     protected final String rotation() {
-        Direction direction = Direction.fromYRot(mc.player.getYRot());
-        String directionName = displayText("display.direction." + direction.getName(), direction.getName());
-        return directionName + " (" + format(Mth.wrapDegrees(mc.player.getYRot()), 1)
-                + ", " + format(mc.player.getXRot(), 1) + ")";
+        float yaw = Mth.wrapDegrees(mc.player.getYRot());
+        int directionIndex = Mth.floor(yaw / 45f + 0.5f) & 7;
+        String direction = switch (directionIndex) {
+            case 0 -> "south";
+            case 1 -> "southwest";
+            case 2 -> "west";
+            case 3 -> "northwest";
+            case 4 -> "north";
+            case 5 -> "northeast";
+            case 6 -> "east";
+            default -> "southeast";
+        };
+        String directionName = displayText("display.direction." + direction, direction);
+        String horizontalLabel = displayText("display.horizontal", "Horizontal");
+        String pitchLabel = displayText("display.pitch", "Pitch");
+        return directionName + " (" + horizontalLabel + ": " + format(yaw, 1)
+                + ", " + pitchLabel + ": " + format(mc.player.getXRot(), 1) + ")";
     }
 
     public static final class FpsHUD extends InfoHUD {
@@ -284,7 +280,9 @@ public abstract class InfoHUD extends HudModule {
 
     public static final class SpeedHUD extends InfoHUD {
         public static final SpeedHUD INSTANCE = new SpeedHUD();
+        private static final Color CONVERTED_SPEED_COLOR = new Color(160, 160, 160, 255);
         private final EnumSetting<SpeedMode> speedMode = enumSetting("Speed Mode", SpeedMode.Horizontal);
+        private final BoolSetting showVerticalSpeed = boolSetting("Show Vertical Speed", false);
 
         private SpeedHUD() {
             super("Speed HUD", 100f, 20f);
@@ -297,25 +295,70 @@ public abstract class InfoHUD extends HudModule {
 
         @Override
         protected String value() {
-            return format(speed(speedMode.getValue()), 2) + " " + displayText("display.unit", "b/s");
-        }
-    }
-
-    public static final class VerticalSpeedHUD extends InfoHUD {
-        public static final VerticalSpeedHUD INSTANCE = new VerticalSpeedHUD();
-
-        private VerticalSpeedHUD() {
-            super("Vertical Speed HUD", 120f, 20f);
+            return fullSpeed(speed(speedMode.getValue()));
         }
 
         @Override
-        protected String label() {
-            return displayText("display.label", "Vertical");
+        public void render(DeltaTracker deltaTracker) {
+            if (nullCheck()) return;
+
+            TextRenderer renderer = textRendererSupplier.get();
+            float textScale = scale.getValue().floatValue();
+            float pad = padding.getValue().floatValue();
+            float spacing = 2f;
+            double speedValue = speed(speedMode.getValue());
+            String verticalLabel = displayText("display.vertical label", "Vertical");
+            double verticalValue = Math.abs(mc.player.getKnownSpeed().y) * 20.0;
+            float mainWidth = lineWidth(renderer, label(), speedValue, textScale);
+            float verticalWidth = showVerticalSpeed.getValue()
+                    ? lineWidth(renderer, verticalLabel, verticalValue, textScale)
+                    : 0f;
+            float panelWidth = Math.max(minimumWidth, pad * 2f + Math.max(mainWidth, verticalWidth));
+            float lineHeight = renderer.getHeight(textScale);
+            float panelHeight = pad * 2f + lineHeight
+                    + (showVerticalSpeed.getValue() ? spacing + lineHeight : 0f);
+
+            drawBackground(panelWidth, panelHeight);
+            float y = this.y + pad;
+            renderSpeedLine(renderer, label(), speedValue, textScale, y, panelWidth);
+            if (showVerticalSpeed.getValue()) {
+                renderSpeedLine(renderer, verticalLabel, verticalValue, textScale, y + lineHeight + spacing, panelWidth);
+            }
+            setBounds(panelWidth, panelHeight);
         }
 
-        @Override
-        protected String value() {
-            return format(Math.abs(mc.player.getKnownSpeed().y) * 20.0, 2) + " " + displayText("display.unit", "b/s");
+        private float lineWidth(TextRenderer renderer, String lineLabel, double metersPerSecond, float textScale) {
+            return renderer.getWidth(lineLabel, textScale) + renderer.getWidth(":", textScale)
+                    + renderer.getWidth(" ", textScale) + renderer.getWidth(fullSpeed(metersPerSecond), textScale);
+        }
+
+        private void renderSpeedLine(TextRenderer renderer, String lineLabel, double metersPerSecond,
+                                     float textScale, float y, float panelWidth) {
+            String primaryValue = primarySpeed(metersPerSecond);
+            String convertedValue = convertedSpeed(metersPerSecond);
+            float labelWidth = renderer.getWidth(lineLabel, textScale);
+            float colonWidth = renderer.getWidth(":", textScale);
+            float gap = renderer.getWidth(" ", textScale);
+            float primaryWidth = renderer.getWidth(primaryValue, textScale);
+            float contentWidth = lineWidth(renderer, lineLabel, metersPerSecond, textScale);
+            float x = alignedX(panelWidth, contentWidth, padding.getValue().floatValue());
+            renderScope().text(lineLabel, x, y, textScale, labelColor.getValue());
+            renderScope().text(":", x + labelWidth, y, textScale, labelColor.getValue());
+            float valueX = x + labelWidth + colonWidth + gap;
+            renderScope().text(primaryValue, valueX, y, textScale, valueColor.getValue());
+            renderScope().text(convertedValue, valueX + primaryWidth, y, textScale, CONVERTED_SPEED_COLOR);
+        }
+
+        private String primarySpeed(double metersPerSecond) {
+            return format(metersPerSecond, 2) + " m/s";
+        }
+
+        private String convertedSpeed(double metersPerSecond) {
+            return "(" + format(metersPerSecond * 3.6, 2) + " km/h)";
+        }
+
+        private String fullSpeed(double metersPerSecond) {
+            return primarySpeed(metersPerSecond) + convertedSpeed(metersPerSecond);
         }
     }
 
@@ -326,7 +369,6 @@ public abstract class InfoHUD extends HudModule {
         private final BoolSetting oppositeCoordinates = boolSetting("Opposite Coordinates", true);
         private final BoolSetting oppositeChunk = boolSetting("Opposite Chunk", false, oppositeCoordinates::getValue);
         private final BoolSetting oppositeRegion = boolSetting("Opposite Region", false, oppositeCoordinates::getValue);
-        private final EnumSetting<EndOppositeMode> endOppositeMode = enumSetting("End Opposite Mode", EndOppositeMode.Normal, oppositeCoordinates::getValue);
 
         private CoordinatesHUD() {
             super("Coordinates HUD", 180f, 66f);
@@ -352,20 +394,19 @@ public abstract class InfoHUD extends HudModule {
             float spacing = 2f;
             BlockPos pos = mc.player.blockPosition();
             String mainValue = coordinates(pos);
-            // 主世界坐标绿、下界红、末地黄；区块/区域坐标保持原白色（valueColor）格式
+            // 主世界坐标为绿色、下界为红色、末地为黄色。
             Color mainColor = dimensionColor(mc.level.dimension());
             List<CoordinateLine> lines = new ArrayList<>();
-            lines.add(new CoordinateLine(coordinatesLabel(), mainValue, mainScale, mainColor));
-            if (showChunk.getValue()) lines.add(new CoordinateLine(chunkLabel(), chunkCoordinates(pos), subScale, valueColor.getValue()));
-            if (showRegion.getValue()) lines.add(new CoordinateLine(regionLabel(), regionCoordinates(pos), subScale, valueColor.getValue()));
+            lines.add(new CoordinateLine(coordinatesLabel(), mainValue, "", mainScale, mainColor));
+            if (showChunk.getValue()) lines.add(chunkLine(chunkLabel(), pos, subScale));
+            if (showRegion.getValue()) lines.add(regionLine(regionLabel(), pos, subScale));
 
             CoordinateLine opposite = oppositeLine(pos);
             if (opposite != null) {
                 lines.add(opposite);
-                if (oppositeChunk.getValue()) lines.add(new CoordinateLine(oppositeLabel("Chunk"),
-                        chunkCoordinates(oppositePosition(pos)), subScale, valueColor.getValue()));
-                if (oppositeRegion.getValue()) lines.add(new CoordinateLine(oppositeLabel("Region"),
-                        regionCoordinates(oppositePosition(pos)), subScale, valueColor.getValue()));
+                BlockPos oppositePos = oppositePosition(pos);
+                if (oppositeChunk.getValue()) lines.add(chunkLine(oppositeLabel("Chunk"), oppositePos, subScale));
+                if (oppositeRegion.getValue()) lines.add(regionLine(oppositeLabel("Region"), oppositePos, subScale));
             }
 
             float panelHeight = pad * 2f;
@@ -374,28 +415,38 @@ public abstract class InfoHUD extends HudModule {
                 panelHeight += renderer.getHeight(line.scale());
                 width = Math.max(width, renderer.getWidth(line.label(), line.scale())
                         + renderer.getWidth(":", line.scale()) + renderer.getWidth(" ", line.scale())
-                        + renderer.getWidth(line.value(), line.scale()));
+                        + renderer.getWidth(line.value(), line.scale())
+                        + renderer.getWidth(line.relativeValue(), line.scale()));
             }
             panelHeight += spacing * Math.max(0, lines.size() - 1);
             float panelWidth = Math.max(minimumWidth, pad * 2f + width);
             drawBackground(panelWidth, panelHeight);
             float y = this.y + pad;
             for (CoordinateLine line : lines) {
-                renderLine(renderer, line.label(), line.value(), line.scale(), y, panelWidth, line.valueColor());
+                renderLine(renderer, line, y, panelWidth);
                 y += renderer.getHeight(line.scale()) + spacing;
             }
             setBounds(panelWidth, panelHeight);
         }
 
-        private void renderLine(TextRenderer renderer, String lineLabel, String lineValue, float textScale, float y, float panelWidth, Color valueColor) {
+        private void renderLine(TextRenderer renderer, CoordinateLine line, float y, float panelWidth) {
+            String lineLabel = line.label();
+            String lineValue = line.value();
+            float textScale = line.scale();
             float gap = renderer.getWidth(" ", textScale);
             float labelWidth = renderer.getWidth(lineLabel, textScale);
             float colonWidth = renderer.getWidth(":", textScale);
-            float contentWidth = labelWidth + colonWidth + gap + renderer.getWidth(lineValue, textScale);
+            float valueWidth = renderer.getWidth(lineValue, textScale);
+            float contentWidth = labelWidth + colonWidth + gap + valueWidth
+                    + renderer.getWidth(line.relativeValue(), textScale);
             float x = alignedX(panelWidth, contentWidth, padding.getValue().floatValue());
             renderScope().text(lineLabel, x, y, textScale, labelColor.getValue());
             renderScope().text(":", x + labelWidth, y, textScale, labelColor.getValue());
-            renderScope().text(lineValue, x + labelWidth + colonWidth + gap, y, textScale, valueColor);
+            float valueX = x + labelWidth + colonWidth + gap;
+            renderScope().text(lineValue, valueX, y, textScale, line.valueColor());
+            if (!line.relativeValue().isEmpty()) {
+                renderScope().text(line.relativeValue(), valueX + valueWidth, y, textScale, Color.WHITE);
+            }
         }
 
         private String coordinates(BlockPos pos) {
@@ -414,16 +465,20 @@ public abstract class InfoHUD extends HudModule {
             return displayText("display.region coordinates", "Region Coordinates");
         }
 
-        private String chunkCoordinates(BlockPos pos) {
+        private CoordinateLine chunkLine(String label, BlockPos pos, float textScale) {
             int x = Math.floorDiv(pos.getX(), 16);
             int z = Math.floorDiv(pos.getZ(), 16);
-            return x +  " " + z + " (" + Math.floorMod(pos.getX(), 16) +  " " + Math.floorMod(pos.getZ(), 16) + ")";
+            String value = x + " " + z;
+            String relative = " (" + Math.floorMod(pos.getX(), 16) + " " + Math.floorMod(pos.getZ(), 16) + ")";
+            return new CoordinateLine(label, value, relative, textScale, valueColor.getValue());
         }
 
-        private String regionCoordinates(BlockPos pos) {
+        private CoordinateLine regionLine(String label, BlockPos pos, float textScale) {
             int x = Math.floorDiv(pos.getX(), 512);
             int z = Math.floorDiv(pos.getZ(), 512);
-            return x + " "  + z + " (" + Math.floorMod(pos.getX(), 512) +  " " + Math.floorMod(pos.getZ(), 512) + ")";
+            String value = x + " " + z;
+            String relative = " (" + Math.floorMod(pos.getX(), 512) + " " + Math.floorMod(pos.getZ(), 512) + ")";
+            return new CoordinateLine(label, value, relative, textScale, valueColor.getValue());
         }
 
         private CoordinateLine oppositeLine(BlockPos pos) {
@@ -441,10 +496,9 @@ public abstract class InfoHUD extends HudModule {
                 x *= 8.0;
                 z *= 8.0;
             } else {
-                if (endOppositeMode.getValue() == EndOppositeMode.Hidden) return null;
-                oppositeDim = Level.END;
+                return null;
             }
-            return new CoordinateLine(oppositeLabel(""), coordinates(BlockPos.containing(x, pos.getY(), z)),
+            return new CoordinateLine(oppositeLabel(""), coordinates(BlockPos.containing(x, pos.getY(), z)), "",
                     scale.getValue().floatValue(), dimensionColor(oppositeDim));
         }
 
@@ -490,7 +544,7 @@ public abstract class InfoHUD extends HudModule {
             return BlockPos.containing(x, pos.getY(), z);
         }
 
-        private record CoordinateLine(String label, String value, float scale, Color valueColor) {
+        private record CoordinateLine(String label, String value, String relativeValue, float scale, Color valueColor) {
         }
     }
 
@@ -507,10 +561,74 @@ public abstract class InfoHUD extends HudModule {
 
     public static final class LookingAtHUD extends InfoHUD {
         public static final LookingAtHUD INSTANCE = new LookingAtHUD();
+        private final ColorSetting targetColor = colorSetting("Target Color", new Color(95, 230, 130, 255));
 
         private LookingAtHUD() { super("Looking At HUD", 150f, 20f); }
         @Override protected String label() { return displayText("display.label", "Looking At"); }
-        @Override protected String value() { return lookingAt(); }
+        @Override protected String value() { return target().description(); }
+
+        @Override
+        public void render(DeltaTracker deltaTracker) {
+            if (nullCheck()) return;
+
+            LookingAtTarget target = target();
+            TextRenderer renderer = textRendererSupplier.get();
+            float textScale = scale.getValue().floatValue();
+            float pad = padding.getValue().floatValue();
+            float gap = renderer.getWidth(" ", textScale);
+            float labelWidth = renderer.getWidth(label(), textScale);
+            float colonWidth = renderer.getWidth(":", textScale);
+            boolean hasTarget = !target.description().isEmpty();
+            float targetWidth = renderer.getWidth(target.description(), textScale);
+            float coordinatesWidth = renderer.getWidth(target.coordinates(), textScale);
+            float firstColonWidth = hasTarget ? colonWidth + gap : 0f;
+            float secondColonWidth = hasTarget ? colonWidth + gap : 0f;
+            float contentWidth = labelWidth + firstColonWidth + targetWidth + secondColonWidth + coordinatesWidth;
+            float panelWidth = Math.max(minimumWidth, pad * 2f + contentWidth);
+            float panelHeight = pad * 2f + renderer.getHeight(textScale);
+
+            drawBackground(panelWidth, panelHeight);
+            float x = alignedX(panelWidth, contentWidth, pad);
+            float y = this.y + pad;
+            renderScope().text(label(), x, y, textScale, labelColor.getValue());
+            if (hasTarget) {
+                x += labelWidth;
+                renderScope().text(":", x, y, textScale, labelColor.getValue());
+                x += colonWidth + gap;
+                renderScope().text(target.description(), x, y, textScale, targetColor.getValue());
+                x += targetWidth;
+                renderScope().text(":", x, y, textScale, labelColor.getValue());
+                x += colonWidth + gap;
+                renderScope().text(target.coordinates(), x, y, textScale, valueColor.getValue());
+            }
+            setBounds(panelWidth, panelHeight);
+        }
+
+        private LookingAtTarget target() {
+            HitResult hit = mc.hitResult;
+            if (hit instanceof BlockHitResult blockHit && hit.getType() == HitResult.Type.BLOCK) {
+                BlockPos pos = blockHit.getBlockPos();
+                if (mc.level.getBlockState(pos).isAir()) return LookingAtTarget.EMPTY;
+                String kind = displayText("display.block", "Block");
+                String name = mc.level.getBlockState(pos).getBlock().getName().getString();
+                return new LookingAtTarget(kind + " (" + name + ")", coordinates(pos));
+            }
+            if (hit instanceof EntityHitResult entityHit) {
+                BlockPos pos = entityHit.getEntity().blockPosition();
+                String kind = displayText("display.entity", "Entity");
+                String name = entityHit.getEntity().getName().getString();
+                return new LookingAtTarget(kind + " (" + name + ")", coordinates(pos));
+            }
+            return LookingAtTarget.EMPTY;
+        }
+
+        private String coordinates(BlockPos pos) {
+            return pos.getX() + " " + pos.getY() + " " + pos.getZ();
+        }
+
+        private record LookingAtTarget(String description, String coordinates) {
+            private static final LookingAtTarget EMPTY = new LookingAtTarget("", "");
+        }
     }
 
     public static final class BreakingProgressHUD extends InfoHUD {

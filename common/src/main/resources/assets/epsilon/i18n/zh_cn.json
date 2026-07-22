@@ -2,11 +2,11 @@
   "epsilon": {
     "_value": "Epsilon",
     "categories": {
-        "combat": "战斗",
-        "player": "玩家",
-        "movement": "移动",
-        "render": "渲染",
-        "misc": "杂项"
+      "combat": "战斗",
+      "player": "玩家",
+      "movement": "移动",
+      "render": "渲染",
+      "misc": "杂项"
     },
     "keybind": {
       "none": "无",
@@ -1043,9 +1043,9 @@
         "auto replace": "自动替换",
         "replace threshold": "替换阈值",
         "emergency hover": "紧急悬停",
-        "low durability warning": "低耐久提醒",
-        "warning threshold": "提醒阈值",
-        "only when last elytra": "仅剩最后一个鞘翅时提醒",
+        "low durability warning": "低耐久警告",
+        "warning threshold": "警告阈值",
+        "only when last elytra": "仅剩最后一件鞘翅时警告",
         "no_usable_replacement": "没有可用的替换鞘翅",
         "replaced_low_durability": "已替换低耐久鞘翅",
         "durability_low": "鞘翅耐久过低：{durability}",
@@ -1070,10 +1070,7 @@
           "lowqualityfirst": "低质量优先"
         },
         "swap back immediately": "立即换回",
-        "only when holding a mace": "仅手持重锤时",
-        "low durability warning": "低耐久警告",
-        "warning threshold": "警告阈值",
-        "only when last elytra": "仅剩最后一件鞘翅时警告"
+        "only when holding a mace": "仅手持重锤时"
       },
       "fake player": {
         "_value": "假人",
@@ -1516,11 +1513,11 @@
         "_value": "画面比例",
         "ratio": "比例"
       },
-        "better death screen": {
-          "_value": "更好的死亡界面",
-          "freecam key": "自由视角按键"
-        },
-        "block esp": {
+      "better death screen": {
+        "_value": "更好的死亡界面",
+        "freecam key": "自由视角按键"
+      },
+      "block esp": {
         "_value": "方块透视",
         "block list": "方块列表",
         "illegals": "非法方块",
@@ -1964,23 +1961,372 @@
       }
     },
     "elements": {
-      "fps hud": {"_value": "FPS HUD", "display": {"label": "FPS"}, "scale": "缩放", "padding": "内边距", "alignment": {"_value": "对齐", "left": "左对齐", "center": "居中", "right": "右对齐"}, "corner radius": "圆角半径", "background": "背景", "background color": "背景颜色", "background blur": "背景模糊", "label color": "标签颜色", "value color": "数值颜色"},
-      "tps hud": {"_value": "TPS HUD", "display": {"label": "TPS"}, "scale": "缩放", "padding": "内边距", "alignment": {"_value": "对齐", "left": "左对齐", "center": "居中", "right": "右对齐"}, "corner radius": "圆角半径", "background": "背景", "background color": "背景颜色", "background blur": "背景模糊", "label color": "标签颜色", "value color": "数值颜色"},
-      "ping hud": {"_value": "Ping HUD", "display": {"label": "延迟", "unit": "毫秒"}, "scale": "缩放", "padding": "内边距", "alignment": {"_value": "对齐", "left": "左对齐", "center": "居中", "right": "右对齐"}, "corner radius": "圆角半径", "background": "背景", "background color": "背景颜色", "background blur": "背景模糊", "label color": "标签颜色", "value color": "数值颜色"},
-      "speed hud": {"_value": "速度 HUD", "display": {"label": "速度", "unit": "格/秒"}, "speed mode": {"_value": "速度模式", "horizontal": "水平速度", "alldirections": "全方向速度"}, "scale": "缩放", "padding": "内边距", "alignment": {"_value": "对齐", "left": "左对齐", "center": "居中", "right": "右对齐"}, "corner radius": "圆角半径", "background": "背景", "background color": "背景颜色", "background blur": "背景模糊", "label color": "标签颜色", "value color": "数值颜色"},
-      "vertical speed hud": {"_value": "垂直速度 HUD", "display": {"label": "垂直速度", "unit": "格/秒"}, "scale": "缩放", "padding": "内边距", "alignment": {"_value": "对齐", "left": "左对齐", "center": "居中", "right": "右对齐"}, "corner radius": "圆角半径", "background": "背景", "background color": "背景颜色", "background blur": "背景模糊", "label color": "标签颜色", "value color": "数值颜色"},
-      "coordinates hud": {"_value": "坐标 HUD", "display": {"coordinates": "坐标", "chunk coordinates": "区块坐标", "region coordinates": "区域坐标", "nether coordinates": "下界坐标", "nether chunk coordinates": "下界区块坐标", "nether region coordinates": "下界区域坐标", "overworld coordinates": "主世界坐标", "overworld chunk coordinates": "主世界区块坐标", "overworld region coordinates": "主世界区域坐标", "end coordinates": "末地坐标", "end chunk coordinates": "末地区块坐标", "end region coordinates": "末地区域坐标"}, "show chunk": "显示区块坐标", "show region": "显示区域坐标", "opposite coordinates": "对应维度坐标", "opposite chunk": "对应区块坐标", "opposite region": "对应区域坐标", "end opposite mode": {"_value": "末地对应坐标", "normal": "显示正常坐标", "hidden": "隐藏"}, "scale": "缩放", "padding": "内边距", "alignment": {"_value": "对齐", "left": "左对齐", "center": "居中", "right": "右对齐"}, "corner radius": "圆角半径", "background": "背景", "background color": "背景颜色", "background blur": "背景模糊", "label color": "标签颜色", "value color": "数值颜色"},
-      "game mode hud": {"_value": "游戏模式 HUD", "display": {"label": "游戏模式", "unknown": "未知", "survival": "生存", "creative": "创造", "adventure": "冒险", "spectator": "旁观"}, "scale": "缩放", "padding": "内边距", "alignment": {"_value": "对齐", "left": "左对齐", "center": "居中", "right": "右对齐"}, "corner radius": "圆角半径", "background": "背景", "background color": "背景颜色", "background blur": "背景模糊", "label color": "标签颜色", "value color": "数值颜色"},
-      "main hand item hud": {"_value": "主手物品 HUD", "display": {"empty": "空", "unbreakable": "不可破坏"}, "scale": "缩放", "padding": "内边距", "alignment": {"_value": "对齐", "left": "左对齐", "center": "居中", "right": "右对齐"}, "background": "背景", "background color": "背景颜色", "item color": "物品颜色", "durability color": "耐久颜色"},
-      "off hand item hud": {"_value": "副手物品 HUD", "display": {"empty": "空", "unbreakable": "不可破坏"}, "scale": "缩放", "padding": "内边距", "alignment": {"_value": "对齐", "left": "左对齐", "center": "居中", "right": "右对齐"}, "background": "背景", "background color": "背景颜色", "item color": "物品颜色", "durability color": "耐久颜色"},
-      "looking at hud": {"_value": "准星目标 HUD", "display": {"label": "准星目标", "nothing": "无"}, "scale": "缩放", "padding": "内边距", "alignment": {"_value": "对齐", "left": "左对齐", "center": "居中", "right": "右对齐"}, "corner radius": "圆角半径", "background": "背景", "background color": "背景颜色", "background blur": "背景模糊", "label color": "标签颜色", "value color": "数值颜色"},
-      "breaking progress hud": {"_value": "挖掘进度 HUD", "display": {"label": "挖掘进度"}, "scale": "缩放", "padding": "内边距", "alignment": {"_value": "对齐", "left": "左对齐", "center": "居中", "right": "右对齐"}, "corner radius": "圆角半径", "background": "背景", "background color": "背景颜色", "background blur": "背景模糊", "label color": "标签颜色", "value color": "数值颜色"},
-      "server hud": {"_value": "服务器 HUD", "display": {"label": "服务器", "singleplayer": "单人游戏"}, "scale": "缩放", "padding": "内边距", "alignment": {"_value": "对齐", "left": "左对齐", "center": "居中", "right": "右对齐"}, "corner radius": "圆角半径", "background": "背景", "background color": "背景颜色", "background blur": "背景模糊", "label color": "标签颜色", "value color": "数值颜色"},
-      "weather hud": {"_value": "天气 HUD", "display": {"label": "天气", "clear": "晴朗", "rain": "下雨", "thunder": "雷雨"}, "scale": "缩放", "padding": "内边距", "alignment": {"_value": "对齐", "left": "左对齐", "center": "居中", "right": "右对齐"}, "corner radius": "圆角半径", "background": "背景", "background color": "背景颜色", "background blur": "背景模糊", "label color": "标签颜色", "value color": "数值颜色"},
-      "biome hud": {"_value": "生物群系 HUD", "display": {"label": "生物群系", "unknown": "未知"}, "scale": "缩放", "padding": "内边距", "alignment": {"_value": "对齐", "left": "左对齐", "center": "居中", "right": "右对齐"}, "corner radius": "圆角半径", "background": "背景", "background color": "背景颜色", "background blur": "背景模糊", "label color": "标签颜色", "value color": "数值颜色"},
-      "world time hud": {"_value": "世界时间 HUD", "display": {"label": "世界时间"}, "scale": "缩放", "padding": "内边距", "alignment": {"_value": "对齐", "left": "左对齐", "center": "居中", "right": "右对齐"}, "corner radius": "圆角半径", "background": "背景", "background color": "背景颜色", "background blur": "背景模糊", "label color": "标签颜色", "value color": "数值颜色"},
-      "real time hud": {"_value": "现实时间 HUD", "display": {"label": "现实时间"}, "scale": "缩放", "padding": "内边距", "alignment": {"_value": "对齐", "left": "左对齐", "center": "居中", "right": "右对齐"}, "corner radius": "圆角半径", "background": "背景", "background color": "背景颜色", "background blur": "背景模糊", "label color": "标签颜色", "value color": "数值颜色"},
-      "rotation hud": {"_value": "视角 HUD", "display": {"label": "视角", "direction": {"north": "北", "south": "南", "east": "东", "west": "西", "up": "上", "down": "下"}}, "scale": "缩放", "padding": "内边距", "alignment": {"_value": "对齐", "left": "左对齐", "center": "居中", "right": "右对齐"}, "corner radius": "圆角半径", "background": "背景", "background color": "背景颜色", "background blur": "背景模糊", "label color": "标签颜色", "value color": "数值颜色"},
+      "fps hud": {
+        "_value": "FPS HUD",
+        "display": {
+          "label": "FPS"
+        },
+        "scale": "缩放",
+        "padding": "内边距",
+        "alignment": {
+          "_value": "对齐",
+          "left": "左对齐",
+          "center": "居中",
+          "right": "右对齐"
+        },
+        "corner radius": "圆角半径",
+        "background": "背景",
+        "background color": "背景颜色",
+        "background blur": "背景模糊",
+        "label color": "标签颜色",
+        "value color": "数值颜色"
+      },
+      "tps hud": {
+        "_value": "TPS HUD",
+        "display": {
+          "label": "TPS"
+        },
+        "scale": "缩放",
+        "padding": "内边距",
+        "alignment": {
+          "_value": "对齐",
+          "left": "左对齐",
+          "center": "居中",
+          "right": "右对齐"
+        },
+        "corner radius": "圆角半径",
+        "background": "背景",
+        "background color": "背景颜色",
+        "background blur": "背景模糊",
+        "label color": "标签颜色",
+        "value color": "数值颜色"
+      },
+      "ping hud": {
+        "_value": "Ping HUD",
+        "display": {
+          "label": "延迟",
+          "unit": "毫秒"
+        },
+        "scale": "缩放",
+        "padding": "内边距",
+        "alignment": {
+          "_value": "对齐",
+          "left": "左对齐",
+          "center": "居中",
+          "right": "右对齐"
+        },
+        "corner radius": "圆角半径",
+        "background": "背景",
+        "background color": "背景颜色",
+        "background blur": "背景模糊",
+        "label color": "标签颜色",
+        "value color": "数值颜色"
+      },
+      "speed hud": {
+        "_value": "速度 HUD",
+        "display": {
+          "label": "速度",
+          "vertical label": "垂直速度"
+        },
+        "speed mode": {
+          "_value": "速度模式",
+          "horizontal": "水平速度",
+          "alldirections": "全方向速度"
+        },
+        "show vertical speed": "显示垂直速度",
+        "scale": "缩放",
+        "padding": "内边距",
+        "alignment": {
+          "_value": "对齐",
+          "left": "左对齐",
+          "center": "居中",
+          "right": "右对齐"
+        },
+        "corner radius": "圆角半径",
+        "background": "背景",
+        "background color": "背景颜色",
+        "background blur": "背景模糊",
+        "label color": "标签颜色",
+        "value color": "数值颜色"
+      },
+      "coordinates hud": {
+        "_value": "坐标 HUD",
+        "display": {
+          "coordinates": "坐标",
+          "chunk coordinates": "区块坐标",
+          "region coordinates": "区域坐标",
+          "nether coordinates": "下界坐标",
+          "nether chunk coordinates": "下界区块坐标",
+          "nether region coordinates": "下界区域坐标",
+          "overworld coordinates": "主世界坐标",
+          "overworld chunk coordinates": "主世界区块坐标",
+          "overworld region coordinates": "主世界区域坐标"
+        },
+        "show chunk": "显示区块坐标",
+        "show region": "显示区域坐标",
+        "opposite coordinates": "对应维度坐标",
+        "opposite chunk": "对应区块坐标",
+        "opposite region": "对应区域坐标",
+        "scale": "缩放",
+        "padding": "内边距",
+        "alignment": {
+          "_value": "对齐",
+          "left": "左对齐",
+          "center": "居中",
+          "right": "右对齐"
+        },
+        "corner radius": "圆角半径",
+        "background": "背景",
+        "background color": "背景颜色",
+        "background blur": "背景模糊",
+        "label color": "标签颜色",
+        "value color": "数值颜色"
+      },
+      "game mode hud": {
+        "_value": "游戏模式 HUD",
+        "display": {
+          "label": "游戏模式",
+          "unknown": "未知",
+          "survival": "生存",
+          "creative": "创造",
+          "adventure": "冒险",
+          "spectator": "旁观"
+        },
+        "scale": "缩放",
+        "padding": "内边距",
+        "alignment": {
+          "_value": "对齐",
+          "left": "左对齐",
+          "center": "居中",
+          "right": "右对齐"
+        },
+        "corner radius": "圆角半径",
+        "background": "背景",
+        "background color": "背景颜色",
+        "background blur": "背景模糊",
+        "label color": "标签颜色",
+        "value color": "数值颜色"
+      },
+      "main hand item hud": {
+        "_value": "主手物品 HUD",
+        "display": {
+          "empty": "空",
+          "unbreakable": "不可破坏"
+        },
+        "scale": "缩放",
+        "padding": "内边距",
+        "alignment": {
+          "_value": "对齐",
+          "left": "左对齐",
+          "center": "居中",
+          "right": "右对齐"
+        },
+        "background": "背景",
+        "background color": "背景颜色",
+        "item color": "物品颜色",
+        "durability color": "耐久颜色"
+      },
+      "off hand item hud": {
+        "_value": "副手物品 HUD",
+        "display": {
+          "empty": "空",
+          "unbreakable": "不可破坏"
+        },
+        "scale": "缩放",
+        "padding": "内边距",
+        "alignment": {
+          "_value": "对齐",
+          "left": "左对齐",
+          "center": "居中",
+          "right": "右对齐"
+        },
+        "background": "背景",
+        "background color": "背景颜色",
+        "item color": "物品颜色",
+        "durability color": "耐久颜色"
+      },
+      "looking at hud": {
+        "_value": "准星目标 HUD",
+        "display": {
+          "label": "准星目标",
+          "block": "方块",
+          "entity": "实体"
+        },
+        "scale": "缩放",
+        "padding": "内边距",
+        "alignment": {
+          "_value": "对齐",
+          "left": "左对齐",
+          "center": "居中",
+          "right": "右对齐"
+        },
+        "corner radius": "圆角半径",
+        "background": "背景",
+        "background color": "背景颜色",
+        "background blur": "背景模糊",
+        "label color": "标签颜色",
+        "value color": "数值颜色",
+        "target color": "目标颜色"
+      },
+      "breaking progress hud": {
+        "_value": "挖掘进度 HUD",
+        "display": {
+          "label": "挖掘进度"
+        },
+        "scale": "缩放",
+        "padding": "内边距",
+        "alignment": {
+          "_value": "对齐",
+          "left": "左对齐",
+          "center": "居中",
+          "right": "右对齐"
+        },
+        "corner radius": "圆角半径",
+        "background": "背景",
+        "background color": "背景颜色",
+        "background blur": "背景模糊",
+        "label color": "标签颜色",
+        "value color": "数值颜色"
+      },
+      "server hud": {
+        "_value": "服务器 HUD",
+        "display": {
+          "label": "服务器",
+          "singleplayer": "单人游戏"
+        },
+        "scale": "缩放",
+        "padding": "内边距",
+        "alignment": {
+          "_value": "对齐",
+          "left": "左对齐",
+          "center": "居中",
+          "right": "右对齐"
+        },
+        "corner radius": "圆角半径",
+        "background": "背景",
+        "background color": "背景颜色",
+        "background blur": "背景模糊",
+        "label color": "标签颜色",
+        "value color": "数值颜色"
+      },
+      "weather hud": {
+        "_value": "天气 HUD",
+        "display": {
+          "label": "天气",
+          "clear": "晴朗",
+          "rain": "下雨",
+          "thunder": "雷雨"
+        },
+        "scale": "缩放",
+        "padding": "内边距",
+        "alignment": {
+          "_value": "对齐",
+          "left": "左对齐",
+          "center": "居中",
+          "right": "右对齐"
+        },
+        "corner radius": "圆角半径",
+        "background": "背景",
+        "background color": "背景颜色",
+        "background blur": "背景模糊",
+        "label color": "标签颜色",
+        "value color": "数值颜色"
+      },
+      "biome hud": {
+        "_value": "生物群系 HUD",
+        "display": {
+          "label": "生物群系",
+          "unknown": "未知"
+        },
+        "scale": "缩放",
+        "padding": "内边距",
+        "alignment": {
+          "_value": "对齐",
+          "left": "左对齐",
+          "center": "居中",
+          "right": "右对齐"
+        },
+        "corner radius": "圆角半径",
+        "background": "背景",
+        "background color": "背景颜色",
+        "background blur": "背景模糊",
+        "label color": "标签颜色",
+        "value color": "数值颜色"
+      },
+      "world time hud": {
+        "_value": "游戏内时间 HUD",
+        "display": {
+          "label": "游戏内时间"
+        },
+        "scale": "缩放",
+        "padding": "内边距",
+        "alignment": {
+          "_value": "对齐",
+          "left": "左对齐",
+          "center": "居中",
+          "right": "右对齐"
+        },
+        "corner radius": "圆角半径",
+        "background": "背景",
+        "background color": "背景颜色",
+        "background blur": "背景模糊",
+        "label color": "标签颜色",
+        "value color": "数值颜色"
+      },
+      "real time hud": {
+        "_value": "现实时间 HUD",
+        "display": {
+          "label": "现实时间"
+        },
+        "scale": "缩放",
+        "padding": "内边距",
+        "alignment": {
+          "_value": "对齐",
+          "left": "左对齐",
+          "center": "居中",
+          "right": "右对齐"
+        },
+        "corner radius": "圆角半径",
+        "background": "背景",
+        "background color": "背景颜色",
+        "background blur": "背景模糊",
+        "label color": "标签颜色",
+        "value color": "数值颜色"
+      },
+      "rotation hud": {
+        "_value": "视角 HUD",
+        "display": {
+          "label": "视角",
+          "horizontal": "水平",
+          "pitch": "俯仰",
+          "direction": {
+            "north": "北",
+            "northeast": "东北",
+            "east": "东",
+            "southeast": "东南",
+            "south": "南",
+            "southwest": "西南",
+            "west": "西",
+            "northwest": "西北",
+            "up": "上",
+            "down": "下"
+          }
+        },
+        "scale": "缩放",
+        "padding": "内边距",
+        "alignment": {
+          "_value": "对齐",
+          "left": "左对齐",
+          "center": "居中",
+          "right": "右对齐"
+        },
+        "corner radius": "圆角半径",
+        "background": "背景",
+        "background color": "背景颜色",
+        "background blur": "背景模糊",
+        "label color": "标签颜色",
+        "value color": "数值颜色"
+      },
       "armor hud": {
         "_value": "装备 HUD",
         "orientation": {
@@ -2019,6 +2365,7 @@
       },
       "compass hud": {
         "_value": "指南针 HUD",
+        "display mode": "显示方式",
         "width": "宽度",
         "scale": "缩放",
         "primary color": "主要颜色",
@@ -2036,7 +2383,12 @@
         "_value": "服务器卡顿提示 HUD",
         "threshold": "提示阈值",
         "scale": "缩放",
-        "alignment": {"_value": "对齐", "left": "左对齐", "center": "居中", "right": "右对齐"},
+        "alignment": {
+          "_value": "对齐",
+          "left": "左对齐",
+          "center": "居中",
+          "right": "右对齐"
+        },
         "normal color": "普通颜色",
         "warning color": "警告颜色",
         "critical color": "严重颜色"
@@ -2047,18 +2399,26 @@
           "title": "玩家",
           "distance unit": "米",
           "health unit": "生命",
-          "ping unit": "毫秒"
+          "ping unit": "毫秒",
+          "game mode": {
+            "creative": "创造",
+            "survival": "生存",
+            "adventure": "冒险",
+            "spectator": "旁观",
+            "unknown": "未知"
+          }
         },
         "limit": "数量上限",
         "show distance": "显示距离",
         "show health": "显示生命值",
         "show ping": "显示延迟",
+        "show game mode": "显示游戏模式",
         "show friends": "显示好友",
         "scale": "缩放",
         "title color": "标题颜色",
         "player color": "玩家颜色",
         "friend color": "好友颜色",
-        "info color": "信息颜色",
+        "background": "背景",
         "background color": "背景颜色"
       },
       "keyboard hud": {
@@ -2257,7 +2617,12 @@
       "watermark": {
         "_value": "水印",
         "scale": "缩放",
-        "alignment": {"_value": "对齐", "left": "左对齐", "center": "居中", "right": "右对齐"},
+        "alignment": {
+          "_value": "对齐",
+          "left": "左对齐",
+          "center": "居中",
+          "right": "右对齐"
+        },
         "text color": "文本颜色"
       }
     }

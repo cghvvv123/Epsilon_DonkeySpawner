@@ -66,7 +66,7 @@ mkdir -p reference && unzip common/build/moddev/artifacts/vanilla-*-sources.jar 
 |------|------|
 | `addon/` | Addon 基类、注册事件、Bootstrap 工具 |
 | `assets/` | i18n 翻译、配置文件迁移、资源持有者 |
-| `elements/` | HUD 元素基类 `HudModule` 与具体实现（`Notifications`、独立信息 HUD（`FPS`、`TPS`、`Ping`、`Speed`、`Vertical Speed`、`Coordinates`、`Game Mode`、`Main Hand Item`、`Off Hand Item`、`Looking At`、`Breaking Progress`、`Server`、`Weather`、`Biome`、`World Time`、`Real Time`、`Rotation`）、`BPS`、`MTF`、`Inventory`、`ContainerHUD`、`ModuleList`、`Potions`、`ScaffoldBlock`、`TargetHUD`、`Watermark`、`ArmorHUD`、`ItemCounterHUD`、`CompassHUD`、`HoleHUD`、`LagNotifierHUD`、`PlayerRadarHUD`、`KeyboardHUD`、`PlayerModelHUD`、`MapHUD`） |
+| `elements/` | HUD 元素基类 `HudModule` 与具体实现（`Notifications`、独立信息 HUD（`FPS`、`TPS`、`Ping`、`Speed`、`Coordinates`、`Game Mode`、`Main Hand Item`、`Off Hand Item`、`Looking At`、`Breaking Progress`、`Server`、`Weather`、`Biome`、`World Time`、`Real Time`、`Rotation`）、`BPS`、`MTF`、`Inventory`、`ContainerHUD`、`ModuleList`、`Potions`、`ScaffoldBlock`、`TargetHUD`、`Watermark`、`ArmorHUD`、`ItemCounterHUD`、`CompassHUD`、`HoleHUD`、`LagNotifierHUD`、`PlayerRadarHUD`、`KeyboardHUD`、`PlayerModelHUD`、`MapHUD`） |
 | `events/` | 自定义事件总线与事件类型 |
 | `graphics/` | Lumin Graphics 渲染框架（含 `renderers/`、`shaders/`、`text/`、`buffer/`、`immediate/`、`schedulers/` 子包） |
 | `gui/` | 点击 GUI（Panel、Dropdown、HUD 编辑器、Scene 系统） |
