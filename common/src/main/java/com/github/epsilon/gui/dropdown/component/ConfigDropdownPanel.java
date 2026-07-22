@@ -159,6 +159,16 @@ public class ConfigDropdownPanel extends AbstractDropdownPanel {
         return false;
     }
 
+    @Override
+    protected boolean mouseReleasedContent(double mouseX, double mouseY, int button) {
+        return button == 0 && inputField.mouseReleased();
+    }
+
+    @Override
+    protected boolean mouseDraggedContent(double mouseX, double mouseY) {
+        return inputField.mouseDragged(mouseX);
+    }
+
     private void runAction(int index) {
         String value = inputField.getText().trim();
         try {
@@ -211,7 +221,7 @@ public class ConfigDropdownPanel extends AbstractDropdownPanel {
             inputField.blur();
             return true;
         }
-        return inputField.keyPressed(keyCode);
+        return inputField.keyPressed(keyCode, scanCode, modifiers);
     }
 
     @Override

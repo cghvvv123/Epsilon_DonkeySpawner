@@ -225,6 +225,10 @@ public class ConfigClientSettingTab implements ClientSettingTabView {
 
     @Override
     public boolean mouseReleased(MouseButtonEvent event) {
+        if (event.button() == 0 && inputField.mouseReleased()) {
+            markDirty();
+            return true;
+        }
         if (scrollBarDrag.mouseReleased()) {
             markDirty();
             return true;
@@ -234,6 +238,10 @@ public class ConfigClientSettingTab implements ClientSettingTabView {
 
     @Override
     public boolean mouseDragged(MouseButtonEvent event, double mouseX, double mouseY) {
+        if (inputField.mouseDragged(event.x())) {
+            markDirty();
+            return true;
+        }
         if (!scrollBarDrag.isDragging()) {
             return false;
         }

@@ -53,7 +53,7 @@ public class DropdownScreen extends Screen {
     private final UiScene scene = new UiScene(EpsilonUiTheme.INSTANCE);
     private final PanelPopupHost popupHost = new PanelPopupHost();
     private final Animation scrimAnim = new Animation(Easing.EASE_OUT_SINE, 200L);
-    private final DropdownTextField searchField = new DropdownTextField(64);
+    private final DropdownTextField searchField = new DropdownTextField();
     private final ReisaDropdownCompanion reisaCompanion = new ReisaDropdownCompanion();
     private final Set<String> visiblePanelIds = new HashSet<>();
 
@@ -336,6 +336,10 @@ public class DropdownScreen extends Screen {
             return true;
         }
 
+        if (searchField.mouseReleased()) {
+            return true;
+        }
+
         for (DropdownPanel panel : panels) {
             if (!panel.isVisible()) continue;
             if (panel.mouseReleased(mx, my, button)) {
@@ -348,18 +352,21 @@ public class DropdownScreen extends Screen {
     }
 
     @Override
-    public boolean mouseDragged(MouseButtonEvent event, double mouseX, double mouseY) {
+    public boolean mouseDragged(MouseButtonEvent event, double deltaX, double deltaY) {
         MouseButtonEvent epsilonEvent = LuminRenderSystem.toEpsilonMouseEvent(event);
-        double epsilonMouseX = LuminRenderSystem.toEpsilonMouseX(mouseX);
-        double epsilonMouseY = LuminRenderSystem.toEpsilonMouseY(mouseY);
+        double epsilonMouseX = epsilonEvent.x();
+        double epsilonMouseY = epsilonEvent.y();
         if (popupHost.mouseDragged(epsilonEvent, epsilonMouseX, epsilonMouseY)) {
             react(ReisaDropdownCompanion.Action.DRAG);
+            return true;
+        }
+        if (searchField.mouseDragged(epsilonMouseX)) {
             return true;
         }
         boolean handled = false;
         for (DropdownPanel panel : panels) {
             if (!panel.isVisible()) continue;
-            if (panel.mouseDragged(LuminRenderSystem.toEpsilonMouseX(event.x()), LuminRenderSystem.toEpsilonMouseY(event.y()))) {
+            if (panel.mouseDragged(epsilonMouseX, epsilonMouseY)) {
                 handled = true;
             }
         }
@@ -368,7 +375,8 @@ public class DropdownScreen extends Screen {
             react(ReisaDropdownCompanion.Action.DRAG);
             return true;
         }
-        return super.mouseDragged(epsilonEvent, LuminRenderSystem.toEpsilonMouseX(event.x()), LuminRenderSystem.toEpsilonMouseY(event.y()));
+        return super.mouseDragged(epsilonEvent,
+                LuminRenderSystem.toEpsilonMouseX(deltaX), LuminRenderSystem.toEpsilonMouseY(deltaY));
     }
 
     @Override

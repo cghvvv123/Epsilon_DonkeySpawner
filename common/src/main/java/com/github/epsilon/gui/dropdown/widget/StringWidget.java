@@ -11,7 +11,7 @@ import java.util.Objects;
 
 public class StringWidget extends SettingWidget<StringSetting> {
 
-    private final DropdownTextField inputField = new DropdownTextField(100);
+    private final DropdownTextField inputField = new DropdownTextField();
 
     public StringWidget(StringSetting setting) {
         super(setting);
@@ -75,7 +75,7 @@ public class StringWidget extends SettingWidget<StringSetting> {
             DropdownScreen.INSTANCE.react(ReisaDropdownCompanion.Action.CANCEL);
             return true;
         }
-        if (inputField.keyPressed(keyCode)) {
+        if (inputField.keyPressed(keyCode, scanCode, modifiers)) {
             previewSetting();
             return true;
         }
@@ -89,6 +89,16 @@ public class StringWidget extends SettingWidget<StringSetting> {
             return true;
         }
         return false;
+    }
+
+    @Override
+    public boolean mouseDragged(double mouseX, double mouseY) {
+        return inputField.mouseDragged(mouseX);
+    }
+
+    @Override
+    public boolean mouseReleased(double mouseX, double mouseY, int button) {
+        return button == 0 && inputField.mouseReleased();
     }
 
     public boolean isFocused() {

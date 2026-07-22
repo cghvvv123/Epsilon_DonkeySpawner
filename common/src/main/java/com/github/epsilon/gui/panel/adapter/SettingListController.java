@@ -233,26 +233,31 @@ public class SettingListController implements AutoCloseable {
     }
 
     public boolean mouseReleased(MouseButtonEvent event) {
-        if (draggingSliderEntry == null) {
-            return false;
+        if (draggingSliderEntry != null) {
+            draggingSliderEntry.row.mouseReleased(draggingSliderEntry.bounds, event);
+            draggingSliderEntry = null;
+            return true;
         }
-
-        draggingSliderEntry.row.mouseReleased(draggingSliderEntry.bounds, event);
-        draggingSliderEntry = null;
-        return true;
+        for (SettingEntry entry : settingEntries) {
+            if (entry.row.mouseReleased(entry.bounds, event)) return true;
+        }
+        return false;
     }
 
     public boolean mouseDragged(MouseButtonEvent event, double mouseX, double mouseY) {
-        if (draggingSliderEntry == null || event.button() != 0) {
-            return false;
+        if (event.button() != 0) return false;
+        if (draggingSliderEntry != null) {
+            if (draggingSliderEntry.row instanceof IntSettingRow intRow) {
+                intRow.updateFromMouse(draggingSliderEntry.bounds, event.x());
+                return true;
+            }
+            if (draggingSliderEntry.row instanceof DoubleSettingRow doubleRow) {
+                doubleRow.updateFromMouse(draggingSliderEntry.bounds, event.x());
+                return true;
+            }
         }
-        if (draggingSliderEntry.row instanceof IntSettingRow intRow) {
-            intRow.updateFromMouse(draggingSliderEntry.bounds, event.x());
-            return true;
-        }
-        if (draggingSliderEntry.row instanceof DoubleSettingRow doubleRow) {
-            doubleRow.updateFromMouse(draggingSliderEntry.bounds, event.x());
-            return true;
+        for (SettingEntry entry : settingEntries) {
+            if (entry.row.mouseDragged(entry.bounds, mouseX, mouseY)) return true;
         }
         return false;
     }

@@ -4,6 +4,7 @@ import com.github.epsilon.assets.i18n.EpsilonTranslations;
 import com.github.epsilon.graphics.renderers.TextRenderer;
 import com.github.epsilon.gui.lib.UiRect;
 import com.github.epsilon.gui.lib.UiTree;
+import com.github.epsilon.gui.lib.control.TextFieldEditor;
 import com.github.epsilon.gui.lib.render.UiContentBuffer;
 import com.github.epsilon.gui.lib.render.UiRenderBatch;
 import com.github.epsilon.gui.lib.state.UiInvalidationState;
@@ -59,7 +60,10 @@ public class ModuleListPanel implements AutoCloseable {
     private final ScrollBarDragState scrollBarDrag = new ScrollBarDragState();
     private float scrollVelocity = 0;
     private boolean searchFocused;
-    private int searchCursorIndex;
+    private final TextFieldEditor searchEditor = new TextFieldEditor();
+    private TextFieldEditor.VisibleSlice searchSlice;
+    private float searchTextX;
+    private static final float SEARCH_TEXT_SCALE = 0.52f;
     private long lastContentSignature = Long.MIN_VALUE;
 
     public ModuleListPanel(PanelState state, TextRenderer textRenderer) {
@@ -78,6 +82,10 @@ public class ModuleListPanel implements AutoCloseable {
     public void render(GuiGraphicsExtractor GuiGraphicsExtractor, UiRenderBatch renderBatch, UiRect bounds, int mouseX, int mouseY, float partialTick) {
         this.bounds = bounds;
         this.guiHeight = GuiGraphicsExtractor.guiHeight();
+        if (!searchFocused && !Objects.equals(searchEditor.getText(), state.getSearchQuery())) {
+            searchEditor.setText(state.getSearchQuery());
+            searchEditor.moveCursorToEnd();
+        }
 
         if (Math.abs(scrollVelocity) > 0.01f) {
             state.scrollModules(scrollVelocity * partialTick);
@@ -200,7 +208,13 @@ public class ModuleListPanel implements AutoCloseable {
         UiRect searchBounds = getSearchBounds();
         if (searchBounds.contains(event.x(), event.y())) {
             searchFocused = true;
-            searchCursorIndex = state.getSearchQuery().length();
+            searchEditor.setText(state.getSearchQuery());
+            if (searchSlice != null) {
+                searchEditor.beginSelection(searchEditor.resolveCursor(event.x(), searchTextX, searchSlice,
+                        value -> textRenderer.getWidth(value, SEARCH_TEXT_SCALE)), false);
+            } else {
+                searchEditor.moveCursorToEnd();
+            }
             IMEFocusHelper.activate();
             markDirty();
             return true;
@@ -222,6 +236,11 @@ public class ModuleListPanel implements AutoCloseable {
     }
 
     public boolean mouseReleased(MouseButtonEvent event) {
+        if (event.button() == 0 && searchEditor.isSelecting()) {
+            searchEditor.endSelection();
+            markDirty();
+            return true;
+        }
         if (scrollBarDrag.mouseReleased()) {
             markDirty();
             return true;
@@ -230,6 +249,12 @@ public class ModuleListPanel implements AutoCloseable {
     }
 
     public boolean mouseDragged(MouseButtonEvent event, double mouseX, double mouseY) {
+        if (searchFocused && searchEditor.isSelecting() && searchSlice != null) {
+            searchEditor.dragSelection(searchEditor.resolveCursor(event.x(), searchTextX, searchSlice,
+                    value -> textRenderer.getWidth(value, SEARCH_TEXT_SCALE)));
+            markDirty();
+            return true;
+        }
         if (scrollBarDrag.isDragging()) {
             UiRect viewport = getViewport();
             float newScroll = scrollBarDrag.mouseDragged(event.y(), viewport, state.getMaxModuleScroll());
@@ -262,41 +287,21 @@ public class ModuleListPanel implements AutoCloseable {
         if (!searchFocused) {
             return false;
         }
-        String query = state.getSearchQuery();
-        return switch (event.key()) {
+        boolean handled = switch (event.key()) {
             case 257, 335 -> true;
             case 256 -> {
                 searchFocused = false;
+                searchEditor.endSelection();
                 IMEFocusHelper.deactivate();
                 yield true;
             }
-            case 259 -> {
-                if (searchCursorIndex > 0 && !query.isEmpty()) {
-                    state.setSearchQuery(query.substring(0, searchCursorIndex - 1) + query.substring(searchCursorIndex));
-                    searchCursorIndex--;
-                    markDirty();
-                }
-                yield true;
-            }
-            case 261 -> {
-                if (searchCursorIndex < query.length()) {
-                    state.setSearchQuery(query.substring(0, searchCursorIndex) + query.substring(searchCursorIndex + 1));
-                    markDirty();
-                }
-                yield true;
-            }
-            case 263 -> {
-                searchCursorIndex = Math.max(0, searchCursorIndex - 1);
-                markDirty();
-                yield true;
-            }
-            case 262 -> {
-                searchCursorIndex = Math.min(state.getSearchQuery().length(), searchCursorIndex + 1);
-                markDirty();
-                yield true;
-            }
-            default -> false;
+            default -> searchEditor.keyPressed(event);
         };
+        if (handled) {
+            state.setSearchQuery(searchEditor.getText());
+            markDirty();
+        }
+        return handled;
     }
 
     /**
@@ -306,10 +311,8 @@ public class ModuleListPanel implements AutoCloseable {
         if (!searchFocused) {
             return false;
         }
-        String query = state.getSearchQuery();
-        String typed = event.codepointAsString();
-        state.setSearchQuery(query.substring(0, searchCursorIndex) + typed + query.substring(searchCursorIndex));
-        searchCursorIndex++;
+        if (!searchEditor.insert(event.codepointAsString())) return false;
+        state.setSearchQuery(searchEditor.getText());
         markDirty();
         return true;
     }
@@ -325,6 +328,7 @@ public class ModuleListPanel implements AutoCloseable {
         }
         if (!getSearchBounds().contains(mouseX, mouseY)) {
             searchFocused = false;
+            searchEditor.endSelection();
             IMEFocusHelper.deactivate();
             markDirty();
         }
@@ -397,23 +401,40 @@ public class ModuleListPanel implements AutoCloseable {
         float focusProgress = scope.animate(searchFocusAnimation, searchFocused);
         float fieldHover = Math.max(hoverProgress, focusProgress * 0.85f);
 
-        String query = state.getSearchQuery();
+        String query = searchEditor.getText();
         boolean showPlaceholder = query.isEmpty() && !searchFocused;
-        String display = showPlaceholder ? EpsilonTranslations.Gui.SEARCH.getTranslatedName() : query;
-        float scale = 0.52f;
+        String display;
+        UiTree.SelectionRange selection = null;
+        if (showPlaceholder) {
+            display = EpsilonTranslations.Gui.SEARCH.getTranslatedName();
+            searchSlice = null;
+        } else {
+            searchSlice = searchEditor.visibleSlice(searchBounds.width() - 16.0f,
+                    value -> textRenderer.getWidth(value, SEARCH_TEXT_SCALE));
+            display = searchSlice.text();
+            if (searchFocused && searchSlice.hasSelection()) {
+                selection = new UiTree.SelectionRange(searchSlice.selectionStart(), searchSlice.selectionEnd());
+            }
+        }
+        float scale = SEARCH_TEXT_SCALE;
         Color textColor = showPlaceholder
                 ? MD3Theme.lerp(MD3Theme.TEXT_MUTED, MD3Theme.filledFieldContent(searchFocused), focusProgress)
                 : MD3Theme.filledFieldContent(searchFocused);
+        UiTree.SelectionRange finalSelection = selection;
         scope.pushAbsolute(searchBounds, search ->
                 search.input(searchBounds.atOrigin(), searchFocused, fieldHover,
+                        0.0f, new Color(0, 0, 0, 0), 0.0f,
                         8.0f, display, scale, textColor,
-                        searchFocused ? searchCursorIndex : null, searchFocused ? MD3Theme.filledFieldCaret(true) : null,
+                        finalSelection, finalSelection == null ? null : MD3Theme.withAlpha(MD3Theme.PRIMARY, 90),
+                        searchFocused && searchSlice != null ? searchSlice.cursor() : null,
+                        searchFocused ? MD3Theme.filledFieldCaret(true) : null,
                         null, 0.0f, null));
 
-        if (searchFocused) {
+        searchTextX = searchBounds.x() + 8.0f;
+        if (searchFocused && searchSlice != null) {
             float textY = searchBounds.y() + (searchBounds.height() - textRenderer.getHeight(scale)) / 2.0f;
-            float textX = searchBounds.x() + 8.0f;
-            float caretX = textX + textRenderer.getWidth(query.substring(0, Math.min(searchCursorIndex, query.length())), scale);
+            int cursor = Math.clamp(searchSlice.cursor(), 0, display.length());
+            float caretX = searchTextX + textRenderer.getWidth(display.substring(0, cursor), scale);
             IMEFocusHelper.updateCursorPos(caretX, textY);
         }
     }

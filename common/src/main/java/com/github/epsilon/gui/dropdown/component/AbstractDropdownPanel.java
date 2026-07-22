@@ -226,6 +226,13 @@ public abstract class AbstractDropdownPanel implements DropdownPanel {
             y = (float) (mouseY + dragOffsetY);
             return true;
         }
+        if (opened && cachedExpand > 0.5f) {
+            return mouseDraggedContent(mouseX, mouseY);
+        }
+        return false;
+    }
+
+    protected boolean mouseDraggedContent(double mouseX, double mouseY) {
         return false;
     }
 

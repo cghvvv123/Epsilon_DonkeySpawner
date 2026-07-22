@@ -124,6 +124,7 @@ public abstract class AbstractSliderWidget<S extends Setting<T>, T extends Numbe
             if (isEditorHitboxHovered(mouseX, mouseY)) {
                 inputField.setText(formatPlainValue());
                 inputField.focusIfContains(mouseX, mouseY, getEditorX(), getEditorY(), getEditorWidth(), getEditorHeight());
+                inputField.mouseReleased();
                 dragging = false;
                 DropdownScreen.INSTANCE.react(ReisaDropdownCompanion.Action.TYPING);
                 return true;
@@ -151,6 +152,9 @@ public abstract class AbstractSliderWidget<S extends Setting<T>, T extends Numbe
     @Override
     public boolean mouseReleased(double mouseX, double mouseY, int button) {
         syncSessionState();
+        if (button == 0 && inputField.mouseReleased()) {
+            return true;
+        }
         if (button == 0 && dragging) {
             commitPendingValue();
             dragging = false;
@@ -170,6 +174,11 @@ public abstract class AbstractSliderWidget<S extends Setting<T>, T extends Numbe
     }
 
     @Override
+    public boolean mouseDragged(double mouseX, double mouseY) {
+        return inputField.mouseDragged(mouseX);
+    }
+
+    @Override
     public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
         syncSessionState();
         if (!inputField.isFocused()) return false;
@@ -186,7 +195,7 @@ public abstract class AbstractSliderWidget<S extends Setting<T>, T extends Numbe
             DropdownScreen.INSTANCE.react(ReisaDropdownCompanion.Action.CANCEL);
             return true;
         }
-        if (inputField.keyPressed(keyCode)) {
+        if (inputField.keyPressed(keyCode, scanCode, modifiers)) {
             syncInputValue();
             return true;
         }

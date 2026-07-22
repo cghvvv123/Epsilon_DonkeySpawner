@@ -137,6 +137,14 @@ public class AddonDropdownPanel extends AbstractDropdownPanel {
     }
 
     @Override
+    protected boolean mouseDraggedContent(double mouseX, double mouseY) {
+        for (SettingWidget<?> widget : widgets) {
+            if (widget.isVisible() && widget.mouseDragged(mouseX, mouseY)) return true;
+        }
+        return false;
+    }
+
+    @Override
     public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
         for (SettingWidget<?> widget : widgets) {
             if (!widget.isVisible()) continue;

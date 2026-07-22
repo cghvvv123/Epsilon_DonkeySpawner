@@ -260,12 +260,26 @@ public class ColorWidget extends SettingWidget<ColorSetting> {
 
     @Override
     public boolean mouseReleased(double mouseX, double mouseY, int button) {
+        DropdownTextField focused = getFocusedField();
+        if (button == 0 && focused != null && focused.mouseReleased()) {
+            return true;
+        }
         if (button == 0 && (pickingSB || pickingHue || pickingChannel != null)) {
             commitPendingColor();
             pickingSB = false;
             pickingHue = false;
             pickingChannel = null;
             DropdownScreen.INSTANCE.react(ReisaDropdownCompanion.Action.CONFIRM);
+            return true;
+        }
+        return false;
+    }
+
+    @Override
+    public boolean mouseDragged(double mouseX, double mouseY) {
+        DropdownTextField focused = getFocusedField();
+        if (focused != null && focused.mouseDragged(mouseX)) {
+            syncFocusedInput();
             return true;
         }
         return false;
@@ -288,7 +302,7 @@ public class ColorWidget extends SettingWidget<ColorSetting> {
             DropdownScreen.INSTANCE.react(ReisaDropdownCompanion.Action.CANCEL);
             return true;
         }
-        if (focused.keyPressed(keyCode)) {
+        if (focused.keyPressed(keyCode, scanCode, modifiers)) {
             syncFocusedInput();
             return true;
         }

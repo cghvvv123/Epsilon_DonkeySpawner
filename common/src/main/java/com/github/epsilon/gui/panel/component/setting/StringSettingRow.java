@@ -22,13 +22,13 @@ public class StringSettingRow extends SettingRow<StringSetting> {
 
     private static final float FIELD_SCALE = 0.60f;
     private static final float FIELD_WIDTH = 120.0f;
-    private static final int MAX_LENGTH = 256;
 
     private TextRenderer textMetrics;
     private boolean focused;
     private String inputBuffer;
     private int cursorIndex;
     private int selectionAnchor = -1;
+    private boolean selecting;
 
     public StringSettingRow(StringSetting setting) {
         super(setting);
@@ -86,7 +86,22 @@ public class StringSettingRow extends SettingRow<StringSetting> {
             inputBuffer = normalize(setting.getValue());
         }
         cursorIndex = getCursorIndex(event.x(), fieldBounds);
-        clearSelection();
+        selectionAnchor = cursorIndex;
+        selecting = true;
+        return true;
+    }
+
+    @Override
+    public boolean mouseReleased(UiRect bounds, MouseButtonEvent event) {
+        if (event.button() != 0 || !selecting) return false;
+        selecting = false;
+        return true;
+    }
+
+    @Override
+    public boolean mouseDragged(UiRect bounds, double mouseX, double mouseY) {
+        if (!focused || !selecting) return false;
+        cursorIndex = getCursorIndex(mouseX, getFieldBounds(bounds));
         return true;
     }
 
@@ -122,23 +137,19 @@ public class StringSettingRow extends SettingRow<StringSetting> {
                 yield true;
             }
             case 263 -> {
-                cursorIndex = Math.max(0, cursorIndex - 1);
-                clearSelection();
+                moveCursor(Math.max(0, cursorIndex - 1), event.hasShiftDown());
                 yield true;
             }
             case 262 -> {
-                cursorIndex = Math.min(getDisplayBuffer().length(), cursorIndex + 1);
-                clearSelection();
+                moveCursor(Math.min(getDisplayBuffer().length(), cursorIndex + 1), event.hasShiftDown());
                 yield true;
             }
             case 268 -> {
-                cursorIndex = 0;
-                clearSelection();
+                moveCursor(0, event.hasShiftDown());
                 yield true;
             }
             case 269 -> {
-                cursorIndex = getDisplayBuffer().length();
-                clearSelection();
+                moveCursor(getDisplayBuffer().length(), event.hasShiftDown());
                 yield true;
             }
             default -> false;
@@ -152,11 +163,6 @@ public class StringSettingRow extends SettingRow<StringSetting> {
         }
         String value = event.codepointAsString();
         if (value.isEmpty()) {
-            return false;
-        }
-        String current = getDisplayBuffer();
-        int selectionLength = hasSelection() ? getSelectionEnd() - getSelectionStart() : 0;
-        if (current.length() - selectionLength >= MAX_LENGTH) {
             return false;
         }
         replaceSelection(value);
@@ -196,7 +202,6 @@ public class StringSettingRow extends SettingRow<StringSetting> {
 
     private void commitInput() {
         String value = inputBuffer == null ? normalize(setting.getValue()) : inputBuffer;
-        value = value.length() > MAX_LENGTH ? value.substring(0, MAX_LENGTH) : value;
         applyValue(value);
         inputBuffer = value;
         cursorIndex = inputBuffer.length();
@@ -207,6 +212,9 @@ public class StringSettingRow extends SettingRow<StringSetting> {
         String text = getDisplayBuffer();
         DisplaySlice slice = buildDisplaySlice(text, fieldBounds, true);
         TextRenderer metrics = textMetrics();
+        if (selecting && mouseX <= slice.textX() && slice.start() > 0) return slice.start() - 1;
+        if (selecting && mouseX >= slice.textX() + metrics.getWidth(slice.text(), FIELD_SCALE)
+                && slice.end() < text.length()) return slice.end() + 1;
         for (int i = 0; i <= slice.text().length(); i++) {
             float width = metrics.getWidth(slice.text().substring(0, i), FIELD_SCALE);
             if (mouseX <= slice.textX() + width) {
@@ -309,8 +317,25 @@ public class StringSettingRow extends SettingRow<StringSetting> {
                 pasteClipboard();
                 yield true;
             }
+            case 88 -> {
+                copySelection();
+                if (hasSelection()) replaceSelection("");
+                yield true;
+            }
             default -> false;
         };
+    }
+
+    private void moveCursor(int position, boolean extendSelection) {
+        int oldCursor = cursorIndex;
+        boolean hadSelection = hasSelection();
+        cursorIndex = position;
+        if (extendSelection) {
+            if (!hadSelection) selectionAnchor = oldCursor;
+            selecting = false;
+        } else {
+            clearSelection();
+        }
     }
 
     private void selectAll() {
@@ -335,15 +360,6 @@ public class StringSettingRow extends SettingRow<StringSetting> {
         String sanitized = sanitizeClipboard(clipboard);
         if (sanitized.isEmpty()) {
             return;
-        }
-        String current = getDisplayBuffer();
-        int selectionLength = hasSelection() ? getSelectionEnd() - getSelectionStart() : 0;
-        int available = MAX_LENGTH - (current.length() - selectionLength);
-        if (available <= 0) {
-            return;
-        }
-        if (sanitized.length() > available) {
-            sanitized = sanitized.substring(0, available);
         }
         replaceSelection(sanitized);
     }
@@ -417,6 +433,7 @@ public class StringSettingRow extends SettingRow<StringSetting> {
 
     private void clearSelection() {
         selectionAnchor = -1;
+        selecting = false;
     }
 
     private boolean isControlDown() {

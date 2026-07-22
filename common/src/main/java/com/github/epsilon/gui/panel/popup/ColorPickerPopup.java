@@ -48,6 +48,8 @@ public class ColorPickerPopup implements PanelPopupHost.Popup {
     private Channel focusedChannel;
     private String inputBuffer;
     private int cursorIndex;
+    private int selectionAnchor = -1;
+    private boolean selectingText;
     private Color pendingValue;
 
     public ColorPickerPopup(UiRect bounds, UiRect anchorBounds, ColorSetting setting) {
@@ -147,6 +149,8 @@ public class ColorPickerPopup implements PanelPopupHost.Popup {
                 focusedChannel = channels[i];
                 inputBuffer = Integer.toString(getChannelValue(focusedChannel));
                 cursorIndex = getCursorIndex(event.x(), valueBounds, inputBuffer);
+                selectionAnchor = cursorIndex;
+                selectingText = true;
                 return true;
             }
             UiRect interactiveBounds = new UiRect(trackBounds.x(), trackBounds.y() - 5.0f, trackBounds.width(), trackBounds.height() + 10.0f);
@@ -165,6 +169,10 @@ public class ColorPickerPopup implements PanelPopupHost.Popup {
 
     @Override
     public boolean mouseReleased(MouseButtonEvent event) {
+        if (event.button() == 0 && selectingText) {
+            selectingText = false;
+            return true;
+        }
         if (event.button() == 0 && draggingChannel != null) {
             commitPendingColor();
         }
@@ -174,6 +182,11 @@ public class ColorPickerPopup implements PanelPopupHost.Popup {
 
     @Override
     public boolean mouseDragged(MouseButtonEvent event, double mouseX, double mouseY) {
+        if (focusedChannel != null && selectingText) {
+            int index = getChannelIndex(focusedChannel);
+            cursorIndex = getCursorIndex(event.x(), getValueBounds(getChannelRowBounds(bounds.y(), index)), getDisplayBuffer());
+            return true;
+        }
         if (draggingChannel == null || event.button() != 0) {
             return false;
         }
@@ -188,37 +201,35 @@ public class ColorPickerPopup implements PanelPopupHost.Popup {
         if (focusedChannel == null) {
             return false;
         }
+        if (handleShortcut(event)) return true;
         return switch (event.key()) {
             case 257, 335 -> {
                 commitInput();
                 focusedChannel = null;
                 inputBuffer = null;
+                clearSelection();
                 yield true;
             }
             case 256 -> {
                 focusedChannel = null;
                 inputBuffer = null;
+                clearSelection();
                 yield true;
             }
             case 259 -> {
-                if (inputBuffer != null && cursorIndex > 0) {
-                    inputBuffer = inputBuffer.substring(0, cursorIndex - 1) + inputBuffer.substring(cursorIndex);
-                    cursorIndex--;
-                }
+                deleteBackward();
                 yield true;
             }
             case 261 -> {
-                if (inputBuffer != null && cursorIndex < inputBuffer.length()) {
-                    inputBuffer = inputBuffer.substring(0, cursorIndex) + inputBuffer.substring(cursorIndex + 1);
-                }
+                deleteForward();
                 yield true;
             }
             case 263 -> {
-                cursorIndex = Math.max(0, cursorIndex - 1);
+                moveCursor(Math.max(0, cursorIndex - 1), event.hasShiftDown());
                 yield true;
             }
             case 262 -> {
-                cursorIndex = Math.min(getDisplayBuffer().length(), cursorIndex + 1);
+                moveCursor(Math.min(getDisplayBuffer().length(), cursorIndex + 1), event.hasShiftDown());
                 yield true;
             }
             default -> false;
@@ -235,11 +246,10 @@ public class ColorPickerPopup implements PanelPopupHost.Popup {
             return false;
         }
         String current = getDisplayBuffer();
-        if (current.length() >= 3) {
+        if (current.length() - selectionLength() >= 3) {
             return true;
         }
-        inputBuffer = current.substring(0, cursorIndex) + typed + current.substring(cursorIndex);
-        cursorIndex++;
+        replaceSelection(typed);
         return true;
     }
 
@@ -336,6 +346,13 @@ public class ColorPickerPopup implements PanelPopupHost.Popup {
             float textX = (bounds.width() - textWidth) / 2.0f;
             float textY = (bounds.height() - textHeight) / 2.0f;
             box.text(valueText, textX, textY, textScale, textColor);
+            if (focused && hasSelection()) {
+                float selectionX = textRenderer.getWidth(valueText.substring(0, getSelectionStart()), textScale);
+                float selectionEndX = textRenderer.getWidth(valueText.substring(0, getSelectionEnd()), textScale);
+                box.rect(textX + selectionX, textY, Math.max(1.0f, selectionEndX - selectionX), textHeight,
+                        MD3Theme.withAlpha(MD3Theme.PRIMARY, 100));
+                box.text(valueText, textX, textY, textScale, textColor);
+            }
             if (focused) {
                 float caretX = textX + textRenderer.getWidth(valueText.substring(0, Math.min(cursorIndex, valueText.length())), textScale);
                 box.rect(caretX, 3.0f, 1.0f, bounds.height() - 6.0f, MD3Theme.INVERSE_ON_SURFACE);
@@ -397,6 +414,88 @@ public class ColorPickerPopup implements PanelPopupHost.Popup {
             }
         }
         return text.length();
+    }
+
+    private boolean handleShortcut(KeyEvent event) {
+        if (event.isSelectAll()) {
+            cursorIndex = getDisplayBuffer().length();
+            selectionAnchor = 0;
+            return true;
+        }
+        if (event.isCopy()) {
+            if (hasSelection()) com.github.epsilon.Constants.mc.keyboardHandler.setClipboard(
+                    getDisplayBuffer().substring(getSelectionStart(), getSelectionEnd()));
+            return true;
+        }
+        if (event.isPaste()) {
+            String value = com.github.epsilon.Constants.mc.keyboardHandler.getClipboard().replaceAll("[^0-9]", "");
+            int available = 3 - (getDisplayBuffer().length() - selectionLength());
+            if (available > 0 && !value.isEmpty()) replaceSelection(value.substring(0, Math.min(available, value.length())));
+            return true;
+        }
+        if (event.isCut()) {
+            if (hasSelection()) {
+                com.github.epsilon.Constants.mc.keyboardHandler.setClipboard(
+                        getDisplayBuffer().substring(getSelectionStart(), getSelectionEnd()));
+                replaceSelection("");
+            }
+            return true;
+        }
+        return false;
+    }
+
+    private void moveCursor(int position, boolean selecting) {
+        int old = cursorIndex;
+        boolean hadSelection = hasSelection();
+        cursorIndex = position;
+        if (selecting) {
+            if (!hadSelection) selectionAnchor = old;
+        } else clearSelection();
+    }
+
+    private void deleteBackward() {
+        if (hasSelection()) replaceSelection("");
+        else if (inputBuffer != null && cursorIndex > 0) {
+            inputBuffer = inputBuffer.substring(0, cursorIndex - 1) + inputBuffer.substring(cursorIndex);
+            cursorIndex--;
+        }
+    }
+
+    private void deleteForward() {
+        if (hasSelection()) replaceSelection("");
+        else if (inputBuffer != null && cursorIndex < inputBuffer.length()) {
+            inputBuffer = inputBuffer.substring(0, cursorIndex) + inputBuffer.substring(cursorIndex + 1);
+        }
+    }
+
+    private void replaceSelection(String value) {
+        String current = getDisplayBuffer();
+        int start = hasSelection() ? getSelectionStart() : cursorIndex;
+        int end = hasSelection() ? getSelectionEnd() : cursorIndex;
+        inputBuffer = current.substring(0, start) + value + current.substring(end);
+        cursorIndex = start + value.length();
+        clearSelection();
+    }
+
+    private boolean hasSelection() {
+        return selectionAnchor >= 0 && selectionAnchor != cursorIndex;
+    }
+
+    private int selectionLength() {
+        return hasSelection() ? getSelectionEnd() - getSelectionStart() : 0;
+    }
+
+    private int getSelectionStart() {
+        return Math.min(selectionAnchor, cursorIndex);
+    }
+
+    private int getSelectionEnd() {
+        return Math.max(selectionAnchor, cursorIndex);
+    }
+
+    private void clearSelection() {
+        selectionAnchor = -1;
+        selectingText = false;
     }
 
     private Color getVisibleColor() {

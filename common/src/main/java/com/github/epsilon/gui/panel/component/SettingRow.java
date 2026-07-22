@@ -41,6 +41,10 @@ public abstract class SettingRow<T extends Setting<?>> implements AutoCloseable 
         return false;
     }
 
+    public boolean mouseDragged(UiRect bounds, double mouseX, double mouseY) {
+        return false;
+    }
+
     public boolean mouseScrolled(UiRect bounds, double mouseX, double mouseY, double scrollX, double scrollY) {
         return false;
     }

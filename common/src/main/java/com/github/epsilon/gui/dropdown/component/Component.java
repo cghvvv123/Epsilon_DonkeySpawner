@@ -33,6 +33,10 @@ public abstract class Component {
         return false;
     }
 
+    public boolean mouseDragged(double mouseX, double mouseY) {
+        return false;
+    }
+
     public boolean mouseScrolled(double mouseX, double mouseY, double amount) {
         return false;
     }

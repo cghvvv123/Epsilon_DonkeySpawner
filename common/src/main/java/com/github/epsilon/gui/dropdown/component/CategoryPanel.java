@@ -108,6 +108,14 @@ public class CategoryPanel extends AbstractDropdownPanel {
     }
 
     @Override
+    protected boolean mouseDraggedContent(double mouseX, double mouseY) {
+        for (ModuleButton mb : visibleButtons()) {
+            if (mb.mouseDragged(mouseX, mouseY)) return true;
+        }
+        return false;
+    }
+
+    @Override
     protected boolean mouseReleasedContent(double mouseX, double mouseY, int button) {
         for (ModuleButton mb : visibleButtons()) {
             if (mb.mouseReleased(mouseX, mouseY, button)) {

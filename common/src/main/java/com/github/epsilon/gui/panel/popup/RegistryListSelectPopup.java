@@ -5,6 +5,7 @@ import com.github.epsilon.graphics.LuminRenderSystem;
 import com.github.epsilon.graphics.renderers.TextRenderer;
 import com.github.epsilon.gui.lib.UiRect;
 import com.github.epsilon.gui.lib.UiTree;
+import com.github.epsilon.gui.lib.control.TextFieldEditor;
 import com.github.epsilon.gui.lib.render.UiContentBuffer;
 import com.github.epsilon.gui.lib.render.UiRenderBatch;
 import com.github.epsilon.gui.panel.utils.IMEFocusHelper;
@@ -34,7 +35,6 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.block.Block;
-import org.lwjgl.glfw.GLFW;
 
 import java.util.*;
 import java.util.function.Consumer;
@@ -56,7 +56,6 @@ public class RegistryListSelectPopup<T> implements PanelPopupHost.Popup {
     private static final float SCROLL_STEP = 24.0f;
     private static final float SCROLL_DECAY = 0.86f;
     private static final float MIN_SCROLL_VELOCITY = 0.3f;
-    private static final int MAX_QUERY_LENGTH = 64;
     private static final float ITEM_PREVIEW_SIZE = 14.0f;
     private static final float ITEM_PREVIEW_GAP = 4.0f;
     private static final float CATEGORY_TAB_HEIGHT = 16.0f;
@@ -78,7 +77,9 @@ public class RegistryListSelectPopup<T> implements PanelPopupHost.Popup {
     private final ScrollBarDragState selectedScrollBarDrag = new ScrollBarDragState();
     private final List<ItemPreview> itemPreviews = new ArrayList<>();
 
-    private String query = "";
+    private final TextFieldEditor searchEditor = new TextFieldEditor();
+    private TextFieldEditor.VisibleSlice searchSlice;
+    private float searchTextX;
     private int selectedCategory = -1; // -1 = all
     private float availableScroll;
     private float selectedScroll;
@@ -330,11 +331,25 @@ public class RegistryListSelectPopup<T> implements PanelPopupHost.Popup {
                 popup.text(setting.getDisplayName(), PADDING, titleY, 0.68f, MD3Theme.TEXT_PRIMARY);
                 popup.text(summary, animatedBounds.width() - PADDING - textRenderer.getWidth(summary, summaryScale),
                         centeredTextY(6.0f, TITLE_HEIGHT, summaryScale), summaryScale, MD3Theme.TEXT_MUTED);
-                popup.input(searchBounds.relativeTo(animatedBounds), true, 1.0f, 8.0f,
-                        query.isEmpty() ? EpsilonTranslations.Gui.LIST_SEARCH.getTranslatedName() : query, 0.54f,
-                        query.isEmpty() ? MD3Theme.TEXT_MUTED : MD3Theme.TEXT_PRIMARY,
-                        query.length(), MD3Theme.PRIMARY, null, 0.0f, null);
-                IMEFocusHelper.updateCursorPos(searchBounds.x() + 8.0f, searchBounds.y() + 4.0f);
+                searchSlice = searchEditor.visibleSlice(searchBounds.width() - 16.0f,
+                        value -> textRenderer.getWidth(value, 0.54f));
+                boolean placeholder = searchEditor.getText().isEmpty();
+                String searchText = placeholder ? EpsilonTranslations.Gui.LIST_SEARCH.getTranslatedName() : searchSlice.text();
+                UiTree.SelectionRange searchSelection = !placeholder && searchSlice.hasSelection()
+                        ? new UiTree.SelectionRange(searchSlice.selectionStart(), searchSlice.selectionEnd()) : null;
+                popup.input(searchBounds.relativeTo(animatedBounds), true, 1.0f,
+                        0.0f, new java.awt.Color(0, 0, 0, 0), 0.0f,
+                        8.0f, searchText, 0.54f,
+                        placeholder ? MD3Theme.TEXT_MUTED : MD3Theme.TEXT_PRIMARY,
+                        searchSelection, searchSelection == null ? null : MD3Theme.withAlpha(MD3Theme.PRIMARY, 90),
+                        placeholder ? null : searchSlice.cursor(), MD3Theme.PRIMARY, null, 0.0f, null);
+                searchTextX = searchBounds.x() + 8.0f;
+                float caretX = searchTextX;
+                if (!placeholder) {
+                    int cursor = Math.clamp(searchSlice.cursor(), 0, searchText.length());
+                    caretX += textRenderer.getWidth(searchText.substring(0, cursor), 0.54f);
+                }
+                IMEFocusHelper.updateCursorPos(caretX, searchBounds.y() + 4.0f);
 
                 // Category tabs
                 float columnViewportWidth = (animatedViewport.width() - COLUMN_GAP) / 2.0f;
@@ -432,9 +447,16 @@ public class RegistryListSelectPopup<T> implements PanelPopupHost.Popup {
     @Override
     public boolean mouseClicked(MouseButtonEvent event, boolean isDoubleClick) {
         if (event.button() != 0 || !bounds.contains(event.x(), event.y())) return false;
+        UiRect searchBounds = getSearchBounds(bounds.y());
+        if (searchBounds.contains(event.x(), event.y())) {
+            int cursor = searchSlice == null ? searchEditor.getText().length()
+                    : searchEditor.resolveCursor(event.x(), searchTextX, searchSlice,
+                    value -> textRenderer.getWidth(value, 0.54f));
+            searchEditor.beginSelection(cursor, event.hasShiftDown());
+            return true;
+        }
         // Check category tab clicks
         if (!categories.isEmpty()) {
-            UiRect searchBounds = getSearchBounds(bounds.y());
             float catY = searchBounds.bottom() + 4.0f;
             float catTabX = bounds.x() + PADDING;
             for (int ci = -1; ci < categories.size(); ci++) {
@@ -472,11 +494,18 @@ public class RegistryListSelectPopup<T> implements PanelPopupHost.Popup {
 
     @Override
     public boolean mouseReleased(MouseButtonEvent event) {
-        return availableScrollBarDrag.mouseReleased() | selectedScrollBarDrag.mouseReleased();
+        boolean selection = searchEditor.isSelecting();
+        searchEditor.endSelection();
+        return selection | availableScrollBarDrag.mouseReleased() | selectedScrollBarDrag.mouseReleased();
     }
 
     @Override
     public boolean mouseDragged(MouseButtonEvent event, double mouseX, double mouseY) {
+        if (searchEditor.isSelecting() && searchSlice != null) {
+            searchEditor.dragSelection(searchEditor.resolveCursor(event.x(), searchTextX, searchSlice,
+                    value -> textRenderer.getWidth(value, 0.54f)));
+            return true;
+        }
         boolean handled = false;
         if (availableScrollBarDrag.isDragging()) {
             applyDraggedAvailableScroll(event.y(), lastAvailableViewport != null ? lastAvailableViewport : getAvailableViewport());
@@ -491,27 +520,14 @@ public class RegistryListSelectPopup<T> implements PanelPopupHost.Popup {
 
     @Override
     public boolean keyPressed(KeyEvent event) {
-        return switch (event.key()) {
-            case GLFW.GLFW_KEY_BACKSPACE -> {
-                if (!query.isEmpty()) {
-                    query = query.substring(0, query.length() - 1);
-                    resetScroll();
-                }
-                yield true;
-            }
-            case GLFW.GLFW_KEY_DELETE -> {
-                query = "";
-                resetScroll();
-                yield true;
-            }
-            default -> false;
-        };
+        boolean handled = searchEditor.keyPressed(event);
+        if (handled) resetScroll();
+        return handled;
     }
 
     @Override
     public boolean charTyped(CharacterEvent event) {
-        if (query.length() >= MAX_QUERY_LENGTH) return false;
-        query += event.codepointAsString();
+        if (!searchEditor.insert(event.codepointAsString())) return false;
         resetScroll();
         return true;
     }
@@ -532,7 +548,7 @@ public class RegistryListSelectPopup<T> implements PanelPopupHost.Popup {
     }
 
     private List<T> filteredAvailable() {
-        String needle = query.toLowerCase(Locale.ROOT).trim();
+        String needle = searchEditor.getText().toLowerCase(Locale.ROOT).trim();
         List<T> result = new ArrayList<>();
         for (T entry : allEntries) {
             if (setting.getValue().contains(entry)) continue;
@@ -544,7 +560,7 @@ public class RegistryListSelectPopup<T> implements PanelPopupHost.Popup {
     }
 
     private List<T> filteredSelected() {
-        String needle = query.toLowerCase(Locale.ROOT).trim();
+        String needle = searchEditor.getText().toLowerCase(Locale.ROOT).trim();
         List<T> result = new ArrayList<>();
         for (T entry : setting.getValue()) {
             if (!matchesSelectedCategory(entry)) continue;

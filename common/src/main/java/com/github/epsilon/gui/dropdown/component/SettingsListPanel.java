@@ -43,6 +43,11 @@ public class SettingsListPanel extends AbstractDropdownPanel {
     }
 
     @Override
+    protected boolean mouseDraggedContent(double mouseX, double mouseY) {
+        return settingsContent.mouseDragged(mouseX, mouseY);
+    }
+
+    @Override
     public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
         return settingsContent.keyPressed(keyCode, scanCode, modifiers);
     }

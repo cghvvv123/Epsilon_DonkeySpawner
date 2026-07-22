@@ -3,49 +3,58 @@ package com.github.epsilon.gui.dropdown.widget;
 import com.github.epsilon.gui.dropdown.DropdownTheme;
 import com.github.epsilon.gui.lib.UiTextMetrics;
 import com.github.epsilon.gui.lib.UiTree;
+import com.github.epsilon.gui.lib.control.TextFieldEditor;
 import com.github.epsilon.gui.panel.utils.IMEFocusHelper;
 import com.github.epsilon.gui.theme.MD3Theme;
-import com.mojang.blaze3d.platform.InputConstants;
 import net.minecraft.client.input.CharacterEvent;
 import net.minecraft.client.input.KeyEvent;
-import org.lwjgl.glfw.GLFW;
 
 import java.util.function.Predicate;
 
-import static com.github.epsilon.Constants.mc;
-
 public class DropdownTextField {
 
-    private final int maxLength;
-    private final Predicate<String> inputFilter;
+    private final TextFieldEditor editor;
     private boolean focused;
-    private String text = "";
-    private int cursor;
-    private float[] cursorMidpoints = new float[0];
+    private UiTextMetrics lastTextMetrics;
+    private TextFieldEditor.VisibleSlice lastSlice;
+    private float lastTextX;
+    private float lastTextScale;
+
+    public DropdownTextField() {
+        this(TextFieldEditor.UNLIMITED_LENGTH);
+    }
 
     public DropdownTextField(int maxLength) {
         this(maxLength, value -> true);
     }
 
     public DropdownTextField(int maxLength, Predicate<String> inputFilter) {
-        this.maxLength = maxLength;
-        this.inputFilter = inputFilter == null ? value -> true : inputFilter;
+        this.editor = new TextFieldEditor(maxLength, inputFilter);
     }
 
     public void draw(UiTree.Scope scope, UiTextMetrics textMetrics, float x, float y, float width, float height, int mouseX, int mouseY, String placeholder, float textScale) {
         scope.roundRect(x, y, width, height, DropdownTheme.INPUT_RADIUS, DropdownTheme.inputSurface(focused));
         scope.outline(x, y, width, height, DropdownTheme.INPUT_RADIUS, 0.7f, focused ? MD3Theme.PRIMARY : MD3Theme.withAlpha(MD3Theme.OUTLINE, 90));
 
-        boolean showPlaceholder = text.isEmpty() && !focused;
-        String display = showPlaceholder ? placeholder : text;
+        boolean showPlaceholder = editor.getText().isEmpty() && !focused;
         float textY = y + (height - textMetrics.textHeight(textScale)) / 2.0f;
         float textX = x + 4.0f;
-        updateCursorLayout(textMetrics, textX, textScale);
-        scope.text(trimToWidth(display, textScale, width - 8.0f, textMetrics), textX, textY, textScale, showPlaceholder ? MD3Theme.TEXT_MUTED : MD3Theme.TEXT_PRIMARY);
+        String display;
+        if (showPlaceholder) {
+            display = trimToWidth(placeholder, textScale, width - 8.0f, textMetrics);
+            clearLastLayout();
+        } else {
+            lastSlice = editor.visibleSlice(width - 8.0f, value -> textMetrics.textWidth(value, textScale));
+            lastTextMetrics = textMetrics;
+            lastTextX = textX;
+            lastTextScale = textScale;
+            display = lastSlice.text();
+            drawSelection(scope, textMetrics, textX, textY, textScale, lastSlice);
+        }
+        scope.text(display, textX, textY, textScale, showPlaceholder ? MD3Theme.TEXT_MUTED : MD3Theme.TEXT_PRIMARY);
 
         if (focused) {
-            int safeCursor = Math.min(cursor, text.length());
-            float caretX = textX + textMetrics.textWidth(text.substring(0, safeCursor), textScale);
+            float caretX = textX + textMetrics.textWidth(display.substring(0, Math.clamp(lastSlice.cursor(), 0, display.length())), textScale);
             drawCaret(scope, textMetrics, caretX, textY, textScale);
             IMEFocusHelper.updateCursorPos(caretX, textY);
         }
@@ -55,20 +64,29 @@ public class DropdownTextField {
         scope.roundRect(x, y, width, height, DropdownTheme.INPUT_RADIUS, DropdownTheme.inputSurface(focused));
         scope.outline(x, y, width, height, DropdownTheme.INPUT_RADIUS, 0.7f, focused ? MD3Theme.PRIMARY : MD3Theme.withAlpha(MD3Theme.OUTLINE, 90));
 
-        boolean showPlaceholder = text.isEmpty() && !focused;
-        String display = showPlaceholder ? placeholder : text;
+        boolean showPlaceholder = editor.getText().isEmpty() && !focused;
 
         float textY = y + (height - textMetrics.textHeight(textScale)) / 2.0f;
-        String visibleText = trimToWidth(display, textScale, width - 8.0f, textMetrics);
-        float textX = x + (width - textMetrics.textWidth(visibleText, textScale)) * 0.5f;
-        float caretBaseX = x + (width - textMetrics.textWidth(text, textScale)) * 0.5f;
-        updateCursorLayout(textMetrics, caretBaseX, textScale);
+        String visibleText;
+        float textX;
+        if (showPlaceholder) {
+            visibleText = trimToWidth(placeholder, textScale, width - 8.0f, textMetrics);
+            textX = x + (width - textMetrics.textWidth(visibleText, textScale)) * 0.5f;
+            clearLastLayout();
+        } else {
+            lastSlice = editor.visibleSlice(width - 8.0f, value -> textMetrics.textWidth(value, textScale));
+            visibleText = lastSlice.text();
+            boolean clipped = lastSlice.start() > 0 || lastSlice.end() < editor.getText().length();
+            textX = clipped ? x + 4.0f : x + (width - textMetrics.textWidth(visibleText, textScale)) * 0.5f;
+            lastTextMetrics = textMetrics;
+            lastTextX = textX;
+            lastTextScale = textScale;
+            drawSelection(scope, textMetrics, textX, textY, textScale, lastSlice);
+        }
         scope.text(visibleText, textX, textY, textScale, showPlaceholder ? MD3Theme.TEXT_MUTED : MD3Theme.TEXT_PRIMARY);
 
         if (focused) {
-            int safeCursor = Math.min(cursor, text.length());
-            String beforeCursor = text.substring(0, safeCursor);
-            float caretX = caretBaseX + textMetrics.textWidth(beforeCursor, textScale);
+            float caretX = textX + textMetrics.textWidth(visibleText.substring(0, Math.clamp(lastSlice.cursor(), 0, visibleText.length())), textScale);
             drawCaret(scope, textMetrics, caretX, textY, textScale);
             IMEFocusHelper.updateCursorPos(caretX, textY);
         }
@@ -79,7 +97,7 @@ public class DropdownTextField {
             return false;
         }
         focused = true;
-        cursor = resolveCursor(mouseX);
+        editor.beginSelection(resolveCursor(mouseX), false);
         IMEFocusHelper.activate();
         return true;
     }
@@ -89,75 +107,53 @@ public class DropdownTextField {
             return false;
         }
         focused = true;
-        cursor = resolveCursor(mouseX);
+        editor.beginSelection(resolveCursor(mouseX), false);
         IMEFocusHelper.activate();
         return true;
     }
 
     public void focus() {
         focused = true;
-        cursor = text.length();
+        editor.moveCursorToEnd();
         IMEFocusHelper.activate();
     }
 
     public void blur() {
         if (focused) {
             focused = false;
+            editor.endSelection();
             IMEFocusHelper.deactivate();
         }
     }
 
-    public boolean keyPressed(KeyEvent event) {
-        return keyPressed(event.key());
+    public boolean mouseDragged(double mouseX) {
+        if (!focused || !editor.isSelecting()) return false;
+        editor.dragSelection(resolveCursor(mouseX));
+        return true;
     }
 
-    public boolean keyPressed(int keyCode) {
-        if (!focused) return false;
-        if (isControlDown()) {
-            return handleControlShortcut(keyCode);
-        }
-        return switch (keyCode) {
-            case GLFW.GLFW_KEY_BACKSPACE -> {
-                if (cursor > 0 && !text.isEmpty()) {
-                    text = text.substring(0, cursor - 1) + text.substring(cursor);
-                    cursor--;
-                }
-                yield true;
-            }
-            case GLFW.GLFW_KEY_DELETE -> {
-                if (cursor < text.length()) {
-                    text = text.substring(0, cursor) + text.substring(cursor + 1);
-                }
-                yield true;
-            }
-            case GLFW.GLFW_KEY_LEFT -> {
-                cursor = Math.max(0, cursor - 1);
-                yield true;
-            }
-            case GLFW.GLFW_KEY_RIGHT -> {
-                cursor = Math.min(text.length(), cursor + 1);
-                yield true;
-            }
-            case GLFW.GLFW_KEY_HOME -> {
-                cursor = 0;
-                yield true;
-            }
-            case GLFW.GLFW_KEY_END -> {
-                cursor = text.length();
-                yield true;
-            }
-            default -> false;
-        };
+    public boolean mouseReleased() {
+        if (!editor.isSelecting()) return false;
+        editor.endSelection();
+        return true;
+    }
+
+    public boolean keyPressed(KeyEvent event) {
+        return focused && editor.keyPressed(event);
+    }
+
+    public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
+        return focused && editor.keyPressed(keyCode, scanCode, modifiers);
     }
 
     public boolean charTyped(CharacterEvent event) {
         if (!focused) return false;
-        return insertText(event.codepointAsString());
+        return editor.insert(event.codepointAsString());
     }
 
     public boolean charTyped(String typedText) {
         if (!focused) return false;
-        return insertText(typedText);
+        return editor.insert(typedText);
     }
 
     public boolean isFocused() {
@@ -165,83 +161,43 @@ public class DropdownTextField {
     }
 
     public String getText() {
-        return text;
+        return editor.getText();
     }
 
     public void setText(String text) {
-        this.text = clamp(text == null ? "" : text);
-        cursor = Math.min(cursor, this.text.length());
+        String value = text == null ? "" : text;
+        if (editor.getText().equals(value)) return;
+        editor.setText(value);
+        clearLastLayout();
     }
 
     public void clear() {
-        text = "";
-        cursor = 0;
+        editor.clear();
+        clearLastLayout();
     }
 
     public void setCursorToEnd() {
-        cursor = text.length();
-    }
-
-    private boolean insertText(String inserted) {
-        if (inserted == null || inserted.isEmpty()) return false;
-        StringBuilder accepted = new StringBuilder();
-        inserted.codePoints().forEach(codePoint -> {
-            String candidate = new String(Character.toChars(codePoint));
-            if (inputFilter.test(candidate)) accepted.append(candidate);
-        });
-        if (accepted.isEmpty()) return false;
-        int available = maxLength - text.length();
-        if (available <= 0) return false;
-        String safe = accepted.length() > available ? accepted.substring(0, available) : accepted.toString();
-        if (safe.isEmpty()) return false;
-        text = text.substring(0, cursor) + safe + text.substring(cursor);
-        cursor += safe.length();
-        return true;
-    }
-
-    private boolean handleControlShortcut(int keyCode) {
-        return switch (keyCode) {
-            case GLFW.GLFW_KEY_A -> {
-                cursor = text.length();
-                yield true;
-            }
-            case GLFW.GLFW_KEY_V -> insertText(mc.keyboardHandler.getClipboard());
-            default -> false;
-        };
-    }
-
-    private boolean isControlDown() {
-        var window = mc.getWindow();
-        return InputConstants.isKeyDown(window, GLFW.GLFW_KEY_LEFT_CONTROL) || InputConstants.isKeyDown(window, GLFW.GLFW_KEY_RIGHT_CONTROL);
-    }
-
-    private String clamp(String value) {
-        return value.length() > maxLength ? value.substring(0, maxLength) : value;
-    }
-
-    private void updateCursorLayout(UiTextMetrics textMetrics, float textX, float textScale) {
-        if (text.isEmpty()) {
-            cursorMidpoints = new float[0];
-            return;
-        }
-        if (cursorMidpoints.length != text.length()) {
-            cursorMidpoints = new float[text.length()];
-        }
-        float left = 0.0f;
-        for (int i = 0; i < text.length(); i++) {
-            float right = textMetrics.textWidth(text.substring(0, i + 1), textScale);
-            cursorMidpoints[i] = textX + (left + right) * 0.5f;
-            left = right;
-        }
+        editor.moveCursorToEnd();
     }
 
     private int resolveCursor(double mouseX) {
-        if (text.isEmpty()) return 0;
-        if (cursorMidpoints.length != text.length()) return text.length();
-        for (int i = 0; i < cursorMidpoints.length; i++) {
-            if (mouseX < cursorMidpoints[i]) return i;
-        }
-        return text.length();
+        if (lastSlice == null || lastTextMetrics == null) return editor.getText().length();
+        return editor.resolveCursor(mouseX, lastTextX, lastSlice,
+                value -> lastTextMetrics.textWidth(value, lastTextScale));
+    }
+
+    private void drawSelection(UiTree.Scope scope, UiTextMetrics textMetrics, float textX, float textY,
+                               float textScale, TextFieldEditor.VisibleSlice slice) {
+        if (!focused || !slice.hasSelection()) return;
+        float start = textMetrics.textWidth(slice.text().substring(0, slice.selectionStart()), textScale);
+        float end = textMetrics.textWidth(slice.text().substring(0, slice.selectionEnd()), textScale);
+        scope.rect(textX + start, textY, Math.max(0.8f, end - start), textMetrics.textHeight(textScale),
+                MD3Theme.withAlpha(MD3Theme.PRIMARY, 82));
+    }
+
+    private void clearLastLayout() {
+        lastTextMetrics = null;
+        lastSlice = null;
     }
 
     private void drawCaret(UiTree.Scope scope, UiTextMetrics textMetrics, float x, float y, float textScale) {

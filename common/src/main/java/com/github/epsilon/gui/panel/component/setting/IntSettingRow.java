@@ -26,6 +26,9 @@ public class IntSettingRow extends SettingRow<IntSetting> {
     private boolean focused;
     private String inputBuffer;
     private int cursorIndex;
+    private int selectionAnchor = -1;
+    private boolean selectingText;
+    private DisplaySlice displaySlice;
     private Integer pendingValue;
 
     public IntSettingRow(IntSetting setting) {
@@ -85,12 +88,32 @@ public class IntSettingRow extends SettingRow<IntSetting> {
 
         float fieldHover = animatedHover * 0.85f;
         String display = focused ? getDisplayBuffer() : formatValue();
-        float displayScale = getFieldTextScale(textRenderer, display, fieldBounds);
+        float displayScale;
+        int caretIndex = cursorIndex;
+        int selectionStart = getSelectionStart();
+        int selectionEnd = getSelectionEnd();
+        if (focused) {
+            displaySlice = buildDisplaySlice(display, fieldBounds);
+            display = displaySlice.text();
+            displayScale = FIELD_TEXT_SCALE;
+            caretIndex = displaySlice.caretIndex();
+            selectionStart = Math.clamp(selectionStart, displaySlice.start(), displaySlice.end()) - displaySlice.start();
+            selectionEnd = Math.clamp(selectionEnd, displaySlice.start(), displaySlice.end()) - displaySlice.start();
+        } else {
+            displaySlice = null;
+            displayScale = getFieldTextScale(textRenderer, display, fieldBounds);
+        }
         float textWidth = textRenderer.getWidth(display, displayScale);
-        float textX = fieldBounds.x() + (fieldBounds.width() - textWidth) / 2.0f;
+        float textX = focused && displaySlice != null && (displaySlice.start() > 0 || displaySlice.end() < getDisplayBuffer().length())
+                ? fieldBounds.x() + FIELD_TEXT_PADDING
+                : fieldBounds.x() + (fieldBounds.width() - textWidth) / 2.0f;
+        UiTree.SelectionRange selection = focused && hasSelection() && selectionEnd > selectionStart
+                ? new UiTree.SelectionRange(selectionStart, selectionEnd) : null;
         scope.input(fieldBounds.relativeTo(bounds), focused, fieldHover,
+                0.0f, new java.awt.Color(0, 0, 0, 0), 0.0f,
                 textX - fieldBounds.x(), display, displayScale, MD3Theme.filledFieldContent(focused),
-                focused ? Math.min(cursorIndex, display.length()) : null, focused ? MD3Theme.filledFieldCaret(focused) : null,
+                selection, selection == null ? null : MD3Theme.withAlpha(MD3Theme.PRIMARY, 90),
+                focused ? Math.clamp(caretIndex, 0, display.length()) : null, focused ? MD3Theme.filledFieldCaret(focused) : null,
                 null, 0.0f, null);
     }
 
@@ -110,6 +133,8 @@ public class IntSettingRow extends SettingRow<IntSetting> {
             focused = true;
             inputBuffer = formatPlainValue();
             cursorIndex = getCursorIndex(event.x(), fieldBounds);
+            selectionAnchor = cursorIndex;
+            selectingText = true;
             return true;
         }
         if (event.button() != 0 || !getInteractiveBounds(bounds).contains(event.x(), event.y())) {
@@ -123,6 +148,10 @@ public class IntSettingRow extends SettingRow<IntSetting> {
 
     @Override
     public boolean mouseReleased(UiRect bounds, MouseButtonEvent event) {
+        if (event.button() == 0 && selectingText) {
+            selectingText = false;
+            return true;
+        }
         if (event.button() == 0 && dragging) {
             commitPendingValue();
             dragging = false;
@@ -133,40 +162,45 @@ public class IntSettingRow extends SettingRow<IntSetting> {
     }
 
     @Override
+    public boolean mouseDragged(UiRect bounds, double mouseX, double mouseY) {
+        if (!focused || !selectingText) return false;
+        cursorIndex = getCursorIndex(mouseX, getFieldBounds(bounds));
+        return true;
+    }
+
+    @Override
     public boolean keyPressed(KeyEvent event) {
         if (!focused) {
             return false;
         }
+        if (handleShortcut(event)) return true;
         return switch (event.key()) {
             case 257, 335 -> {
                 commitInput();
                 focused = false;
+                clearSelection();
                 yield true;
             }
             case 256 -> {
                 focused = false;
                 inputBuffer = null;
+                clearSelection();
                 yield true;
             }
             case 259 -> {
-                if (inputBuffer != null && cursorIndex > 0) {
-                    inputBuffer = inputBuffer.substring(0, cursorIndex - 1) + inputBuffer.substring(cursorIndex);
-                    cursorIndex--;
-                }
+                deleteBackward();
                 yield true;
             }
             case 261 -> {
-                if (inputBuffer != null && cursorIndex < inputBuffer.length()) {
-                    inputBuffer = inputBuffer.substring(0, cursorIndex) + inputBuffer.substring(cursorIndex + 1);
-                }
+                deleteForward();
                 yield true;
             }
             case 263 -> {
-                cursorIndex = Math.max(0, cursorIndex - 1);
+                moveCursor(Math.max(0, cursorIndex - 1), event.hasShiftDown());
                 yield true;
             }
             case 262 -> {
-                cursorIndex = Math.min(getDisplayBuffer().length(), cursorIndex + 1);
+                moveCursor(Math.min(getDisplayBuffer().length(), cursorIndex + 1), event.hasShiftDown());
                 yield true;
             }
             default -> false;
@@ -183,8 +217,7 @@ public class IntSettingRow extends SettingRow<IntSetting> {
             return false;
         }
         String current = getDisplayBuffer();
-        inputBuffer = current.substring(0, cursorIndex) + value + current.substring(cursorIndex);
-        cursorIndex++;
+        replaceSelection(value);
         return true;
     }
 
@@ -198,6 +231,7 @@ public class IntSettingRow extends SettingRow<IntSetting> {
         if (focused && inputBuffer == null) {
             inputBuffer = formatPlainValue();
             cursorIndex = inputBuffer.length();
+            clearSelection();
         }
     }
 
@@ -292,6 +326,20 @@ public class IntSettingRow extends SettingRow<IntSetting> {
     private int getCursorIndex(double mouseX, UiRect fieldBounds) {
         String text = getDisplayBuffer();
         TextRenderer metrics = textMetrics();
+        if (focused && displaySlice != null) {
+            float textStart = displaySlice.start() > 0 || displaySlice.end() < text.length()
+                    ? fieldBounds.x() + FIELD_TEXT_PADDING
+                    : fieldBounds.x() + (fieldBounds.width() - metrics.getWidth(displaySlice.text(), FIELD_TEXT_SCALE)) / 2.0f;
+            if (selectingText && mouseX <= textStart && displaySlice.start() > 0) return displaySlice.start() - 1;
+            if (selectingText && mouseX >= textStart + metrics.getWidth(displaySlice.text(), FIELD_TEXT_SCALE)
+                    && displaySlice.end() < text.length()) return displaySlice.end() + 1;
+            for (int i = 0; i <= displaySlice.text().length(); i++) {
+                if (mouseX <= textStart + metrics.getWidth(displaySlice.text().substring(0, i), FIELD_TEXT_SCALE)) {
+                    return displaySlice.start() + i;
+                }
+            }
+            return displaySlice.end();
+        }
         float scale = getFieldTextScale(metrics, text, fieldBounds);
         float textWidth = metrics.getWidth(text, scale);
         float textStart = fieldBounds.x() + (fieldBounds.width() - textWidth) / 2.0f;
@@ -302,6 +350,20 @@ public class IntSettingRow extends SettingRow<IntSetting> {
             }
         }
         return text.length();
+    }
+
+    private DisplaySlice buildDisplaySlice(String value, UiRect fieldBounds) {
+        float availableWidth = Math.max(1.0f, fieldBounds.width() - FIELD_TEXT_PADDING * 2.0f);
+        TextRenderer metrics = textMetrics();
+        int safeCursor = Math.clamp(cursorIndex, 0, value.length());
+        if (metrics.getWidth(value, FIELD_TEXT_SCALE) <= availableWidth) {
+            return new DisplaySlice(value, 0, value.length(), safeCursor);
+        }
+        int start = safeCursor;
+        while (start > 0 && metrics.getWidth(value.substring(start - 1, safeCursor), FIELD_TEXT_SCALE) <= availableWidth) start--;
+        int end = safeCursor;
+        while (end < value.length() && metrics.getWidth(value.substring(start, end + 1), FIELD_TEXT_SCALE) <= availableWidth) end++;
+        return new DisplaySlice(value.substring(start, end), start, end, safeCursor - start);
     }
 
     private float getFieldTextScale(TextRenderer textRenderer, String text, UiRect fieldBounds) {
@@ -315,6 +377,88 @@ public class IntSettingRow extends SettingRow<IntSetting> {
 
     private TextRenderer textMetrics() {
         return textMetrics == null ? FALLBACK_TEXT_METRICS : textMetrics;
+    }
+
+    private boolean handleShortcut(KeyEvent event) {
+        if (event.isSelectAll()) {
+            cursorIndex = getDisplayBuffer().length();
+            selectionAnchor = 0;
+            return true;
+        }
+        if (event.isCopy()) {
+            if (hasSelection()) com.github.epsilon.Constants.mc.keyboardHandler.setClipboard(
+                    getDisplayBuffer().substring(getSelectionStart(), getSelectionEnd()));
+            return true;
+        }
+        if (event.isPaste()) {
+            String value = com.github.epsilon.Constants.mc.keyboardHandler.getClipboard().replaceAll("[^0-9-]", "");
+            if (!value.isEmpty()) replaceSelection(value);
+            return true;
+        }
+        if (event.isCut()) {
+            if (hasSelection()) {
+                com.github.epsilon.Constants.mc.keyboardHandler.setClipboard(
+                        getDisplayBuffer().substring(getSelectionStart(), getSelectionEnd()));
+                replaceSelection("");
+            }
+            return true;
+        }
+        return false;
+    }
+
+    private void moveCursor(int position, boolean selecting) {
+        int old = cursorIndex;
+        boolean hadSelection = hasSelection();
+        cursorIndex = position;
+        if (selecting) {
+            if (!hadSelection) selectionAnchor = old;
+        } else clearSelection();
+    }
+
+    private void deleteBackward() {
+        if (hasSelection()) {
+            replaceSelection("");
+        } else if (inputBuffer != null && cursorIndex > 0) {
+            inputBuffer = inputBuffer.substring(0, cursorIndex - 1) + inputBuffer.substring(cursorIndex);
+            cursorIndex--;
+        }
+    }
+
+    private void deleteForward() {
+        if (hasSelection()) {
+            replaceSelection("");
+        } else if (inputBuffer != null && cursorIndex < inputBuffer.length()) {
+            inputBuffer = inputBuffer.substring(0, cursorIndex) + inputBuffer.substring(cursorIndex + 1);
+        }
+    }
+
+    private void replaceSelection(String value) {
+        String current = getDisplayBuffer();
+        int start = hasSelection() ? getSelectionStart() : cursorIndex;
+        int end = hasSelection() ? getSelectionEnd() : cursorIndex;
+        inputBuffer = current.substring(0, start) + value + current.substring(end);
+        cursorIndex = start + value.length();
+        clearSelection();
+    }
+
+    private boolean hasSelection() {
+        return selectionAnchor >= 0 && selectionAnchor != cursorIndex;
+    }
+
+    private int getSelectionStart() {
+        return Math.min(selectionAnchor, cursorIndex);
+    }
+
+    private int getSelectionEnd() {
+        return Math.max(selectionAnchor, cursorIndex);
+    }
+
+    private void clearSelection() {
+        selectionAnchor = -1;
+        selectingText = false;
+    }
+
+    private record DisplaySlice(String text, int start, int end, int caretIndex) {
     }
 
 }

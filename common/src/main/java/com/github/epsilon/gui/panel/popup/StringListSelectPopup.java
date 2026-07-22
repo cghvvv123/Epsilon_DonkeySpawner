@@ -4,6 +4,7 @@ import com.github.epsilon.assets.i18n.EpsilonTranslations;
 import com.github.epsilon.graphics.renderers.TextRenderer;
 import com.github.epsilon.gui.lib.UiRect;
 import com.github.epsilon.gui.lib.UiTree;
+import com.github.epsilon.gui.lib.control.TextFieldEditor;
 import com.github.epsilon.gui.lib.render.UiContentBuffer;
 import com.github.epsilon.gui.lib.render.UiRenderBatch;
 import com.github.epsilon.gui.panel.utils.IMEFocusHelper;
@@ -38,7 +39,6 @@ public class StringListSelectPopup implements PanelPopupHost.Popup {
     private static final float SCROLL_STEP = 24.0f;
     private static final float SCROLL_DECAY = 0.86f;
     private static final float MIN_SCROLL_VELOCITY = 0.3f;
-    private static final int MAX_QUERY_LENGTH = 64;
 
     private final UiRect bounds;
     private final Setting<List<String>> setting;
@@ -49,7 +49,9 @@ public class StringListSelectPopup implements PanelPopupHost.Popup {
     private final Animation openAnimation = new Animation(Easing.EASE_OUT_CUBIC, 160L);
     private final ScrollBarDragState scrollBarDrag = new ScrollBarDragState();
 
-    private String input = "";
+    private final TextFieldEditor inputEditor = new TextFieldEditor();
+    private TextFieldEditor.VisibleSlice inputSlice;
+    private float inputTextX;
     private float scroll;
     private float scrollVelocity;
     private float maxScroll;
@@ -100,12 +102,25 @@ public class StringListSelectPopup implements PanelPopupHost.Popup {
                 popup.text(summary, animatedBounds.width() - PADDING - textRenderer.getWidth(summary, summaryScale),
                         centeredTextY(6.0f, TITLE_HEIGHT, summaryScale), summaryScale, MD3Theme.TEXT_MUTED);
 
-                String placeholder = input.isEmpty() ? EpsilonTranslations.Gui.LIST_TYPE_TO_ADD.getTranslatedName() : input;
-                popup.input(inputBounds.relativeTo(animatedBounds), true, 1.0f, 8.0f,
-                        placeholder, 0.54f,
-                        input.isEmpty() ? MD3Theme.TEXT_MUTED : MD3Theme.TEXT_PRIMARY,
-                        input.length(), MD3Theme.PRIMARY, null, 0.0f, null);
-                IMEFocusHelper.updateCursorPos(inputBounds.x() + 8.0f, inputBounds.y() + 4.0f);
+                inputSlice = inputEditor.visibleSlice(inputBounds.width() - 16.0f,
+                        value -> textRenderer.getWidth(value, 0.54f));
+                boolean placeholder = inputEditor.getText().isEmpty();
+                String inputText = placeholder ? EpsilonTranslations.Gui.LIST_TYPE_TO_ADD.getTranslatedName() : inputSlice.text();
+                UiTree.SelectionRange inputSelection = !placeholder && inputSlice.hasSelection()
+                        ? new UiTree.SelectionRange(inputSlice.selectionStart(), inputSlice.selectionEnd()) : null;
+                popup.input(inputBounds.relativeTo(animatedBounds), true, 1.0f,
+                        0.0f, new java.awt.Color(0, 0, 0, 0), 0.0f,
+                        8.0f, inputText, 0.54f,
+                        placeholder ? MD3Theme.TEXT_MUTED : MD3Theme.TEXT_PRIMARY,
+                        inputSelection, inputSelection == null ? null : MD3Theme.withAlpha(MD3Theme.PRIMARY, 90),
+                        placeholder ? null : inputSlice.cursor(), MD3Theme.PRIMARY, null, 0.0f, null);
+                inputTextX = inputBounds.x() + 8.0f;
+                float caretX = inputTextX;
+                if (!placeholder) {
+                    int cursor = Math.clamp(inputSlice.cursor(), 0, inputText.length());
+                    caretX += textRenderer.getWidth(inputText.substring(0, cursor), 0.54f);
+                }
+                IMEFocusHelper.updateCursorPos(caretX, inputBounds.y() + 4.0f);
 
                 hoveredRemove = null;
                 hoveredMoveUp = null;
@@ -128,6 +143,14 @@ public class StringListSelectPopup implements PanelPopupHost.Popup {
     @Override
     public boolean mouseClicked(MouseButtonEvent event, boolean isDoubleClick) {
         if (event.button() != 0 || !bounds.contains(event.x(), event.y())) return false;
+        UiRect inputBounds = getInputBounds(bounds.y());
+        if (inputBounds.contains(event.x(), event.y())) {
+            int cursor = inputSlice == null ? inputEditor.getText().length()
+                    : inputEditor.resolveCursor(event.x(), inputTextX, inputSlice,
+                    value -> textRenderer.getWidth(value, 0.54f));
+            inputEditor.beginSelection(cursor, event.hasShiftDown());
+            return true;
+        }
         UiRect viewport = lastViewport != null ? lastViewport : getViewport();
         if (scrollBarDrag.mouseClicked(event.x(), event.y(), viewport, scroll, maxScroll)) {
             applyDraggedScroll(event.y(), viewport);
@@ -150,11 +173,18 @@ public class StringListSelectPopup implements PanelPopupHost.Popup {
 
     @Override
     public boolean mouseReleased(MouseButtonEvent event) {
-        return scrollBarDrag.mouseReleased();
+        boolean selection = inputEditor.isSelecting();
+        inputEditor.endSelection();
+        return selection | scrollBarDrag.mouseReleased();
     }
 
     @Override
     public boolean mouseDragged(MouseButtonEvent event, double mouseX, double mouseY) {
+        if (inputEditor.isSelecting() && inputSlice != null) {
+            inputEditor.dragSelection(inputEditor.resolveCursor(event.x(), inputTextX, inputSlice,
+                    value -> textRenderer.getWidth(value, 0.54f)));
+            return true;
+        }
         if (!scrollBarDrag.isDragging()) return false;
         applyDraggedScroll(event.y(), lastViewport != null ? lastViewport : getViewport());
         return true;
@@ -162,30 +192,18 @@ public class StringListSelectPopup implements PanelPopupHost.Popup {
 
     @Override
     public boolean keyPressed(KeyEvent event) {
-        if (event.key() == GLFW.GLFW_KEY_ENTER && !input.isBlank()) {
-            addFn.accept(input.trim());
-            input = "";
+        if (event.key() == GLFW.GLFW_KEY_ENTER && !inputEditor.getText().isBlank()) {
+            addFn.accept(inputEditor.getText().trim());
+            inputEditor.clear();
             resetScroll();
             return true;
         }
-        return switch (event.key()) {
-            case GLFW.GLFW_KEY_BACKSPACE -> {
-                if (!input.isEmpty()) input = input.substring(0, input.length() - 1);
-                yield true;
-            }
-            case GLFW.GLFW_KEY_DELETE -> {
-                input = "";
-                yield true;
-            }
-            default -> false;
-        };
+        return inputEditor.keyPressed(event);
     }
 
     @Override
     public boolean charTyped(CharacterEvent event) {
-        if (input.length() >= MAX_QUERY_LENGTH) return false;
-        input += event.codepointAsString();
-        return true;
+        return inputEditor.insert(event.codepointAsString());
     }
 
     @Override

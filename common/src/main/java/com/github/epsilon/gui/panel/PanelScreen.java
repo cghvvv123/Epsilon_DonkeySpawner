@@ -295,15 +295,16 @@ public class PanelScreen extends Screen {
     }
 
     @Override
-    public boolean mouseDragged(MouseButtonEvent event, double mouseX, double mouseY) {
+    public boolean mouseDragged(MouseButtonEvent event, double deltaX, double deltaY) {
         MouseButtonEvent epsilonEvent = LuminRenderSystem.toEpsilonMouseEvent(event);
-        double epsilonMouseX = LuminRenderSystem.toEpsilonMouseX(mouseX);
-        double epsilonMouseY = LuminRenderSystem.toEpsilonMouseY(mouseY);
+        double epsilonMouseX = epsilonEvent.x();
+        double epsilonMouseY = epsilonEvent.y();
         if (inputRouter.routeMouseDragged(epsilonEvent, epsilonMouseX, epsilonMouseY, popupHost, moduleDetailPanel, moduleListPanel, clientSettingPanel, state.isClientSettingMode())) {
             dirtyState.markAllDirty();
             return true;
         }
-        return super.mouseDragged(epsilonEvent, epsilonMouseX, epsilonMouseY);
+        return super.mouseDragged(epsilonEvent,
+                LuminRenderSystem.toEpsilonMouseX(deltaX), LuminRenderSystem.toEpsilonMouseY(deltaY));
     }
 
     @Override

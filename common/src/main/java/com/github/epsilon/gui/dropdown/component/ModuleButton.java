@@ -488,6 +488,20 @@ public class ModuleButton extends Component {
     }
 
     @Override
+    public boolean mouseDragged(double mouseX, double mouseY) {
+        if (!expanded) return false;
+        for (SettingSection section : sections) {
+            if (section.hasHeader() && section.isCollapsed()) continue;
+            for (SettingWidget<?> widget : section.widgets()) {
+                if (widget.isVisible() && widget.mouseDragged(mouseX, mouseY)) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    @Override
     public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
         if (listeningKeybind) {
             module.setKeyBind(keyCode == 256 || keyCode == 259 ? KeybindUtils.NONE : keyCode);

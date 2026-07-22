@@ -224,6 +224,16 @@ public class SettingsContent {
         return false;
     }
 
+    public boolean mouseDragged(double mouseX, double mouseY) {
+        for (SettingSection section : sections) {
+            if (section.hasHeader() && section.isCollapsed()) continue;
+            for (SettingWidget<?> widget : section.widgets()) {
+                if (widget.isVisible() && widget.mouseDragged(mouseX, mouseY)) return true;
+            }
+        }
+        return false;
+    }
+
     public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
         for (SettingSection section : sections) {
             if (section.hasHeader() && section.isCollapsed()) continue;

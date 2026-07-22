@@ -90,6 +90,16 @@ public class FriendDropdownPanel extends AbstractDropdownPanel {
     }
 
     @Override
+    protected boolean mouseReleasedContent(double mouseX, double mouseY, int button) {
+        return button == 0 && inputField.mouseReleased();
+    }
+
+    @Override
+    protected boolean mouseDraggedContent(double mouseX, double mouseY) {
+        return inputField.mouseDragged(mouseX);
+    }
+
+    @Override
     public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
         if (!inputField.isFocused()) return false;
         if (keyCode == GLFW.GLFW_KEY_ENTER || keyCode == GLFW.GLFW_KEY_KP_ENTER) {
@@ -100,7 +110,7 @@ public class FriendDropdownPanel extends AbstractDropdownPanel {
             inputField.blur();
             return true;
         }
-        return inputField.keyPressed(keyCode);
+        return inputField.keyPressed(keyCode, scanCode, modifiers);
     }
 
     @Override

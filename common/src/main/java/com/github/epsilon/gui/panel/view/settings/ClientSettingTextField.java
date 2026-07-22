@@ -3,32 +3,30 @@ package com.github.epsilon.gui.panel.view.settings;
 import com.github.epsilon.graphics.renderers.TextRenderer;
 import com.github.epsilon.gui.lib.UiRect;
 import com.github.epsilon.gui.lib.UiTree;
+import com.github.epsilon.gui.lib.control.TextFieldEditor;
 import com.github.epsilon.gui.panel.utils.IMEFocusHelper;
 import com.github.epsilon.gui.theme.MD3Theme;
 import com.github.epsilon.utils.render.animation.Animation;
 import com.github.epsilon.utils.render.animation.Easing;
-import com.mojang.blaze3d.platform.InputConstants;
 import net.minecraft.client.input.CharacterEvent;
 import net.minecraft.client.input.KeyEvent;
-import org.lwjgl.glfw.GLFW;
 
 import java.awt.*;
-
-import static com.github.epsilon.Constants.mc;
 
 public class ClientSettingTextField {
 
     private static final long HOVER_DURATION = 120L;
-    private final int maxLength;
+    private final TextFieldEditor editor;
     private final Animation hoverAnimation = new Animation(Easing.EASE_OUT_CUBIC, HOVER_DURATION);
     private final Animation focusAnimation = new Animation(Easing.EASE_OUT_CUBIC, HOVER_DURATION);
-
     private boolean focused;
-    private String text = "";
-    private int cursor;
+    private TextRenderer lastTextRenderer;
+    private TextFieldEditor.VisibleSlice lastSlice;
+    private float lastTextX;
+    private float lastTextScale;
 
     public ClientSettingTextField(int maxLength) {
-        this.maxLength = maxLength;
+        editor = new TextFieldEditor(maxLength);
         hoverAnimation.setStartValue(0.0f);
         focusAnimation.setStartValue(0.0f);
     }
@@ -43,95 +41,87 @@ public class ClientSettingTextField {
         float textX = bounds.x() + textInset;
         float textY = bounds.y() + (bounds.height() - textHeight) / 2.0f;
 
-        boolean showPlaceholder = text.isEmpty() && !focused;
-        String display = showPlaceholder ? placeholder : text;
+        boolean showPlaceholder = editor.getText().isEmpty() && !focused;
+        TextFieldEditor.VisibleSlice slice = null;
+        String display;
+        float drawTextX = textX;
+        if (showPlaceholder) {
+            display = trimToWidth(placeholder, textRenderer, textScale, bounds.width() - textInset * 2.0f);
+            lastSlice = null;
+            lastTextRenderer = null;
+        } else {
+            slice = editor.visibleSlice(bounds.width() - textInset * 2.0f,
+                    value -> textRenderer.getWidth(value, textScale));
+            display = slice.text();
+            drawTextX = textX;
+            lastSlice = slice;
+            lastTextRenderer = textRenderer;
+            lastTextX = drawTextX;
+            lastTextScale = textScale;
+        }
+
+        UiTree.SelectionRange selection = null;
+        if (slice != null && focused && slice.hasSelection()) {
+            selection = new UiTree.SelectionRange(slice.selectionStart(), slice.selectionEnd());
+        }
         Color textColor = showPlaceholder ? MD3Theme.TEXT_MUTED : MD3Theme.TEXT_PRIMARY;
         scope.input(bounds, focused, hovered ? 0.6f : 0.0f,
                 focusProgress, MD3Theme.PRIMARY, 1.0f,
-                textInset, display, textScale, textColor,
-                null, null,
-                focused ? Math.min(cursor, text.length()) : null, focused ? MD3Theme.TEXT_PRIMARY : null,
-                focused && trailingHint != null && !trailingHint.isBlank() && !text.isEmpty() ? trailingHint : null,
+                drawTextX - bounds.x(), display, textScale, textColor,
+                selection, selection == null ? null : MD3Theme.withAlpha(MD3Theme.PRIMARY, 90),
+                focused && slice != null ? slice.cursor() : null,
+                focused ? MD3Theme.TEXT_PRIMARY : null,
+                focused && trailingHint != null && !trailingHint.isBlank() && !editor.getText().isEmpty() ? trailingHint : null,
                 0.56f,
-                focused && trailingHint != null && !trailingHint.isBlank() && !text.isEmpty() ? MD3Theme.TEXT_MUTED : null);
+                focused && trailingHint != null && !trailingHint.isBlank() && !editor.getText().isEmpty() ? MD3Theme.TEXT_MUTED : null);
 
-        if (focused) {
-            int safeCursor = Math.min(cursor, text.length());
-            float caretX = textX + textRenderer.getWidth(text.substring(0, safeCursor), textScale);
+        if (focused && slice != null) {
+            int cursor = Math.clamp(slice.cursor(), 0, display.length());
+            float caretX = drawTextX + textRenderer.getWidth(display.substring(0, cursor), textScale);
             IMEFocusHelper.updateCursorPos(caretX, textY);
         }
     }
 
     public boolean focusIfContains(UiRect bounds, double mouseX, double mouseY) {
-        if (!bounds.contains(mouseX, mouseY)) {
-            return false;
-        }
+        if (!bounds.contains(mouseX, mouseY)) return false;
         focused = true;
-        cursor = text.length();
+        if (lastSlice != null && lastTextRenderer != null) {
+            editor.beginSelection(editor.resolveCursor(mouseX, lastTextX, lastSlice,
+                    value -> lastTextRenderer.getWidth(value, lastTextScale)), false);
+        } else {
+            editor.moveCursorToEnd();
+        }
         IMEFocusHelper.activate();
+        return true;
+    }
+
+    public boolean mouseDragged(double mouseX) {
+        if (!focused || !editor.isSelecting() || lastSlice == null || lastTextRenderer == null) return false;
+        editor.dragSelection(editor.resolveCursor(mouseX, lastTextX, lastSlice,
+                value -> lastTextRenderer.getWidth(value, lastTextScale)));
+        return true;
+    }
+
+    public boolean mouseReleased() {
+        if (!editor.isSelecting()) return false;
+        editor.endSelection();
         return true;
     }
 
     public void blur() {
         if (focused) {
             focused = false;
+            editor.endSelection();
             IMEFocusHelper.deactivate();
         }
     }
 
     public boolean keyPressed(KeyEvent event) {
-        if (!focused) {
-            return false;
-        }
-
-        if (isControlDown()) {
-            return handleControlShortcut(event.key());
-        }
-
-        return switch (event.key()) {
-            case GLFW.GLFW_KEY_BACKSPACE -> {
-                if (cursor > 0 && !text.isEmpty()) {
-                    text = text.substring(0, cursor - 1) + text.substring(cursor);
-                    cursor--;
-                }
-                yield true;
-            }
-            case GLFW.GLFW_KEY_DELETE -> {
-                if (cursor < text.length()) {
-                    text = text.substring(0, cursor) + text.substring(cursor + 1);
-                }
-                yield true;
-            }
-            case GLFW.GLFW_KEY_LEFT -> {
-                cursor = Math.max(0, cursor - 1);
-                yield true;
-            }
-            case GLFW.GLFW_KEY_RIGHT -> {
-                cursor = Math.min(text.length(), cursor + 1);
-                yield true;
-            }
-            case GLFW.GLFW_KEY_HOME -> {
-                cursor = 0;
-                yield true;
-            }
-            case GLFW.GLFW_KEY_END -> {
-                cursor = text.length();
-                yield true;
-            }
-            default -> false;
-        };
+        return focused && editor.keyPressed(event);
     }
 
     public boolean charTyped(CharacterEvent event) {
-        if (!focused) {
-            return false;
-        }
-        String typed = event.codepointAsString();
-        if (typed.isEmpty()) {
-            return true;
-        }
-        insertText(typed);
-        return true;
+        return focused && editor.insert(event.codepointAsString());
     }
 
     public boolean hasActiveAnimations() {
@@ -143,67 +133,38 @@ public class ClientSettingTextField {
     }
 
     public String getText() {
-        return text;
+        return editor.getText();
     }
 
     public void setText(String text) {
-        this.text = text == null ? "" : clampToMaxLength(text);
-        this.cursor = Math.min(this.cursor, this.text.length());
+        String value = text == null ? "" : text;
+        if (editor.getText().equals(value)) return;
+        editor.setText(value);
+        lastSlice = null;
+        lastTextRenderer = null;
     }
 
     public void clear() {
-        text = "";
-        cursor = 0;
+        editor.clear();
+        lastSlice = null;
+        lastTextRenderer = null;
     }
 
     public void setCursorToEnd() {
-        cursor = text.length();
+        editor.moveCursorToEnd();
     }
 
-    private boolean handleControlShortcut(int key) {
-        return switch (key) {
-            case GLFW.GLFW_KEY_A -> {
-                cursor = text.length();
-                yield true;
-            }
-            case GLFW.GLFW_KEY_V -> {
-                String clipboard = mc.keyboardHandler.getClipboard();
-                if (!clipboard.isEmpty()) {
-                    String sanitized = clipboard.codePoints()
-                            .filter(cp -> cp >= 32 && cp != 127)
-                            .collect(StringBuilder::new, StringBuilder::appendCodePoint, StringBuilder::append)
-                            .toString();
-                    if (!sanitized.isEmpty()) {
-                        insertText(sanitized);
-                    }
-                }
-                yield true;
-            }
-            default -> false;
-        };
-    }
-
-    private void insertText(String inserted) {
-        if (inserted == null || inserted.isEmpty()) {
-            return;
+    private String trimToWidth(String value, TextRenderer textRenderer, float scale, float width) {
+        if (value == null || value.isEmpty() || textRenderer.getWidth(value, scale) <= width) return value == null ? "" : value;
+        String ellipsis = "...";
+        if (textRenderer.getWidth(ellipsis, scale) >= width) return ellipsis;
+        int low = 0;
+        int high = value.length();
+        while (low < high) {
+            int mid = (low + high + 1) / 2;
+            if (textRenderer.getWidth(value.substring(0, mid) + ellipsis, scale) <= width) low = mid;
+            else high = mid - 1;
         }
-        int available = maxLength - text.length();
-        if (available <= 0) {
-            return;
-        }
-        String safeInsert = inserted.length() > available ? inserted.substring(0, available) : inserted;
-        text = text.substring(0, cursor) + safeInsert + text.substring(cursor);
-        cursor += safeInsert.length();
-    }
-
-    private String clampToMaxLength(String value) {
-        return value.length() > maxLength ? value.substring(0, maxLength) : value;
-    }
-
-    private boolean isControlDown() {
-        var window = mc.getWindow();
-        return InputConstants.isKeyDown(window, GLFW.GLFW_KEY_LEFT_CONTROL) || InputConstants.isKeyDown(window, GLFW.GLFW_KEY_RIGHT_CONTROL);
+        return value.substring(0, low) + ellipsis;
     }
 }
-
-
