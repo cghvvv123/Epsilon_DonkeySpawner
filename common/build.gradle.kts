@@ -27,6 +27,7 @@ neoForge {
 }
 
 dependencies {
+    api(libs.starscript)
     compileOnly(libs.mixin)
     compileOnly(libs.mixinextras.common)
     annotationProcessor(libs.mixinextras.common)

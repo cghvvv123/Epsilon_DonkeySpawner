@@ -58,6 +58,10 @@ java {
 
 repositories {
     mavenCentral()
+    maven {
+        name = "Meteor"
+        url = uri("https://maven.meteordev.org/releases")
+    }
     exclusiveContent {
         forRepository {
             maven {

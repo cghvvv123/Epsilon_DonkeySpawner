@@ -49,6 +49,7 @@ public class HudElementHolder {
         addElement(InfoHUD.WorldTimeHUD.INSTANCE);
         addElement(InfoHUD.RealTimeHUD.INSTANCE);
         addElement(InfoHUD.RotationHUD.INSTANCE);
+        addElement(CustomTextHud.INSTANCE);
         addElement(ArmorHUD.INSTANCE);
         addElement(ItemCounterHUD.INSTANCE);
         addElement(CompassHUD.INSTANCE);

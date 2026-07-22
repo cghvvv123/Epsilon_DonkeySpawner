@@ -2327,6 +2327,38 @@
         "label color": "标签颜色",
         "value color": "数值颜色"
       },
+      "custom text hud": {
+        "_value": "自定义文本 HUD",
+        "general": "常规",
+        "shown": {
+          "_value": "显示条件",
+          "always": "始终显示",
+          "whentrue": "条件为真时",
+          "whenfalse": "条件为假时"
+        },
+        "appearance": "外观",
+        "background": "背景",
+        "text": "文本",
+        "update delay": "更新延迟",
+        "condition": "条件",
+        "scale": "缩放",
+        "border": "边距",
+        "panel gap": "面板间距",
+        "alignment": {
+          "_value": "对齐",
+          "left": "左对齐",
+          "center": "居中",
+          "right": "右对齐"
+        },
+        "shadow": "文字阴影",
+        "text color": "文字颜色",
+        "accent color": "强调颜色",
+        "warning color": "警告颜色",
+        "error color": "错误颜色",
+        "background color": "背景颜色",
+        "corner radius": "圆角半径",
+        "background blur": "背景模糊"
+      },
       "armor hud": {
         "_value": "装备 HUD",
         "orientation": {

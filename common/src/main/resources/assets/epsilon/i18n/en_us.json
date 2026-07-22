@@ -2327,6 +2327,38 @@
         "label color": "Label Color",
         "value color": "Value Color"
       },
+      "custom text hud": {
+        "_value": "Custom Text HUD",
+        "general": "General",
+        "shown": {
+          "_value": "Shown",
+          "always": "Always",
+          "whentrue": "When True",
+          "whenfalse": "When False"
+        },
+        "appearance": "Appearance",
+        "background": "Background",
+        "text": "Text",
+        "update delay": "Update Delay",
+        "condition": "Condition",
+        "scale": "Scale",
+        "border": "Border",
+        "panel gap": "Panel Gap",
+        "alignment": {
+          "_value": "Alignment",
+          "left": "Left",
+          "center": "Center",
+          "right": "Right"
+        },
+        "shadow": "Shadow",
+        "text color": "Text Color",
+        "accent color": "Accent Color",
+        "warning color": "Warning Color",
+        "error color": "Error Color",
+        "background color": "Background Color",
+        "corner radius": "Corner Radius",
+        "background blur": "Background Blur"
+      },
       "armor hud": {
         "_value": "Armor HUD",
         "orientation": {

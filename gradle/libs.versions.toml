@@ -19,6 +19,7 @@ gson = "2.13.2"
 sodium = "0.8.12+mc26.1.2"
 junit = "5.13.4"
 junit-platform = "1.13.4"
+starscript = "0.2.5"
 
 [libraries]
 minecraft = { module = "com.mojang:minecraft", version.ref = "project-minecraft" }
@@ -33,6 +34,7 @@ sodium-fabric = { module = "net.caffeinemc:sodium-fabric", version.ref = "sodium
 sodium-neoforge = { module = "net.caffeinemc:sodium-neoforge", version.ref = "sodium" }
 junit-jupiter = { module = "org.junit.jupiter:junit-jupiter", version.ref = "junit" }
 junit-platform-launcher = { module = "org.junit.platform:junit-platform-launcher", version.ref = "junit-platform" }
+starscript = { module = "org.meteordev:starscript", version.ref = "starscript" }
 
 [plugins]
 fabric-loom = { id = "net.fabricmc.fabric-loom", version.ref = "fabric-loom" }
