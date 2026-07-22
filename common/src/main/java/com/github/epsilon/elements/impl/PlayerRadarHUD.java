@@ -69,6 +69,7 @@ public class PlayerRadarHUD extends HudModule {
         for (AbstractClientPlayer player : players) width = Math.max(width, renderer.getWidth(line(player), textScale));
         float panelWidth = width + 10f;
         float panelHeight = (players.size() + 1) * lineHeight + 8f;
+        setBounds(panelWidth, panelHeight);
         if (background.getValue()) {
             renderScope().roundRect(this.x, this.y, panelWidth, panelHeight, 4f, backgroundColor.getValue());
         }
@@ -106,7 +107,6 @@ public class PlayerRadarHUD extends HudModule {
             }
             lineY += lineHeight;
         }
-        setBounds(panelWidth, panelHeight);
     }
 
     private String line(AbstractClientPlayer player) {

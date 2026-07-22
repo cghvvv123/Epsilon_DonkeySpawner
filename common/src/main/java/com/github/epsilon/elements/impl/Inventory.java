@@ -51,6 +51,7 @@ public class Inventory extends HudModule {
 
         float totalWidth = padding * 2f + 9 * slotSize + (9 - 1) * gap;
         float totalHeight = padding * 2f + 3 * slotSize + (3 - 1) * gap;
+        setBounds(totalWidth, totalHeight);
 
         if (backgroundBlur.getValue()) {
             BlurShader.INSTANCE.render(this.x, this.y, totalWidth, totalHeight, radius, blurStrength.getValue());
@@ -69,7 +70,6 @@ public class Inventory extends HudModule {
             }
         }
 
-        setBounds(totalWidth, totalHeight);
     }
 
     @Override

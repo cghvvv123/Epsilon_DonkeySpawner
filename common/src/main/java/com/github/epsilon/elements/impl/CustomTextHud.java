@@ -3,6 +3,7 @@ package com.github.epsilon.elements.impl;
 import com.github.epsilon.elements.HudModule;
 import com.github.epsilon.events.bus.EventHandler;
 import com.github.epsilon.events.impl.PlayerTickEvent;
+import com.github.epsilon.graphics.LuminRenderSystem;
 import com.github.epsilon.graphics.renderers.TextRenderer;
 import com.github.epsilon.graphics.shaders.BlurShader;
 import com.github.epsilon.gui.hudeditor.HudEditorScreen;
@@ -17,7 +18,11 @@ import com.github.epsilon.settings.impl.StringListSetting;
 import com.github.epsilon.settings.impl.StringSetting;
 import com.github.epsilon.utils.misc.EpsilonStarscript;
 import com.google.common.base.Suppliers;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
 import net.minecraft.client.DeltaTracker;
+import net.minecraft.util.Mth;
 import org.meteordev.starscript.Script;
 import org.meteordev.starscript.Section;
 import org.meteordev.starscript.compiler.Compiler;
@@ -26,7 +31,9 @@ import org.meteordev.starscript.utils.StarscriptError;
 
 import java.awt.*;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.function.Supplier;
 
@@ -88,6 +95,8 @@ public final class CustomTextHud extends HudModule {
     private int updateTimer;
     private boolean refreshRequested = true;
     private List<PanelLayout> panelLayouts = List.of();
+    private final Map<String, PanelPosition> panelPositions = new HashMap<>();
+    private PanelPosition conditionPanelPosition;
 
     private CustomTextHud() {
         super("Custom Text HUD", 0.0f, 0.0f, 120.0f, 20.0f);
@@ -111,6 +120,46 @@ public final class CustomTextHud extends HudModule {
         conditionVisible = true;
         refreshRequested = true;
         updateTimer = 0;
+        panelPositions.clear();
+        conditionPanelPosition = null;
+    }
+
+    @Override
+    public JsonObject saveCustomState() {
+        JsonArray panels = new JsonArray();
+        for (String source : texts.getValue()) {
+            PanelPosition position = panelPositions.get(source);
+            if (position == null) continue;
+            JsonObject panel = new JsonObject();
+            panel.addProperty("text", source);
+            panel.addProperty("x", position.x);
+            panel.addProperty("y", position.y);
+            panels.add(panel);
+        }
+        JsonObject state = new JsonObject();
+        state.add("panels", panels);
+        return state;
+    }
+
+    @Override
+    public void loadCustomState(JsonObject state) {
+        panelPositions.clear();
+        conditionPanelPosition = null;
+        if (state == null || !state.has("panels") || !state.get("panels").isJsonArray()) return;
+        for (JsonElement element : state.getAsJsonArray("panels")) {
+            if (!element.isJsonObject()) continue;
+            JsonObject panel = element.getAsJsonObject();
+            if (!panel.has("text") || !panel.has("x") || !panel.has("y")) continue;
+            try {
+                String source = panel.get("text").getAsString();
+                float x = panel.get("x").getAsFloat();
+                float y = panel.get("y").getAsFloat();
+                if (Float.isFinite(x) && Float.isFinite(y)) {
+                    panelPositions.put(source, new PanelPosition(x, y));
+                }
+            } catch (RuntimeException ignored) {
+            }
+        }
     }
 
     @EventHandler
@@ -150,24 +199,31 @@ public final class CustomTextHud extends HudModule {
             return;
         }
 
-        float maxPanelWidth = 0.0f;
-        for (RenderEntry entry : renderEntries) {
-            maxPanelWidth = Math.max(maxPanelWidth, renderer.getWidth(entry.text, textScale) + padding * 2.0f);
-        }
         float panelHeight = textHeight + padding * 2.0f;
-        float totalHeight = renderEntries.size() * panelHeight + Math.max(0, renderEntries.size() - 1) * gap;
-        setBounds(Math.max(20.0f, maxPanelWidth), Math.max(20.0f, totalHeight));
-
-        float rowY = this.y;
+        float defaultY = 0.0f;
+        float layoutWidth = 20.0f;
+        float layoutHeight = 20.0f;
+        List<PreparedPanel> preparedPanels = new ArrayList<>(renderEntries.size());
         List<PanelLayout> layouts = new ArrayList<>(renderEntries.size());
         for (RenderEntry entry : renderEntries) {
             float textWidth = renderer.getWidth(entry.text, textScale);
             float panelWidth = textWidth + padding * 2.0f;
-            float panelX = alignedPanelX(panelWidth, maxPanelWidth);
-            layouts.add(new PanelLayout(panelX - this.x, rowY - this.y, panelWidth, panelHeight));
-            drawPanel(panelX, rowY, panelWidth, panelHeight);
-            drawSections(renderer, entry, panelX + padding, rowY + padding, textScale);
-            rowY += panelHeight + gap;
+            PanelPosition position = getPanelPosition(entry.source, defaultY);
+            position.resize(panelWidth, alignment.getValue());
+            clampPanelPosition(position, panelWidth, panelHeight);
+            preparedPanels.add(new PreparedPanel(entry, position, panelWidth));
+            layouts.add(new PanelLayout(entry.source, position.x, position.y, panelWidth, panelHeight));
+            layoutWidth = Math.max(layoutWidth, position.x + panelWidth);
+            layoutHeight = Math.max(layoutHeight, position.y + panelHeight);
+            defaultY += panelHeight + gap;
+        }
+        setBounds(layoutWidth, layoutHeight);
+
+        for (PreparedPanel panel : preparedPanels) {
+            float panelX = this.x + panel.position.x;
+            float panelY = this.y + panel.position.y;
+            drawPanel(panelX, panelY, panel.width, panelHeight);
+            drawSections(renderer, panel.entry, panelX + padding, panelY + padding, textScale);
         }
         panelLayouts = List.copyOf(layouts);
     }
@@ -181,6 +237,35 @@ public final class CustomTextHud extends HudModule {
     }
 
     @Override
+    public void moveEditorPartTo(int part, float targetX, float targetY) {
+        if (part < 0 || part >= panelLayouts.size()) {
+            super.moveEditorPartTo(part, targetX, targetY);
+            return;
+        }
+        PanelLayout layout = panelLayouts.get(part);
+        float clampedX = Mth.clamp(targetX, 0.0f,
+                Math.max(0.0f, LuminRenderSystem.getScaledWidth() - layout.width()));
+        float clampedY = Mth.clamp(targetY, 0.0f,
+                Math.max(0.0f, LuminRenderSystem.getScaledHeight() - layout.height()));
+        PanelPosition position = layout.source() == null
+                ? conditionPanelPosition
+                : panelPositions.get(layout.source());
+        if (position == null) return;
+        position.x = clampedX - this.x;
+        position.y = clampedY - this.y;
+    }
+
+    @Override
+    protected HorizontalAnchor getResizeHorizontalAnchor() {
+        return HorizontalAnchor.Left;
+    }
+
+    @Override
+    protected VerticalAnchor getResizeVerticalAnchor() {
+        return VerticalAnchor.Top;
+    }
+
+    @Override
     protected boolean shouldRenderTextShadow() {
         return !background.getValue();
     }
@@ -189,6 +274,7 @@ public final class CustomTextHud extends HudModule {
         List<String> currentSources = List.copyOf(texts.getValue());
         if (!currentSources.equals(compiledSources)) {
             compiledSources = currentSources;
+            panelPositions.keySet().retainAll(currentSources);
             compileEntries();
             refreshRequested = true;
         }
@@ -261,33 +347,42 @@ public final class CustomTextHud extends HudModule {
     private List<RenderEntry> buildRenderEntries(boolean editor) {
         List<RenderEntry> result = new ArrayList<>();
         if (conditionError != null && editor) {
-            result.add(new RenderEntry(new Section(3, conditionError), conditionError, true));
+            result.add(new RenderEntry(null, new Section(3, conditionError), conditionError, true));
         }
         if (!conditionVisible && !editor) return result;
 
         for (CompiledEntry entry : entries) {
             if (entry.error != null) {
-                result.add(new RenderEntry(new Section(3, entry.error), entry.error, true));
+                result.add(new RenderEntry(entry.source, new Section(3, entry.error), entry.error, true));
                 continue;
             }
             if (entry.section == null || entry.section.toString().isBlank()) {
                 if (editor) {
                     String preview = entry.source == null || entry.source.isBlank() ? "Custom Text" : entry.source;
-                    result.add(new RenderEntry(new Section(0, preview), preview, false));
+                    result.add(new RenderEntry(entry.source, new Section(0, preview), preview, false));
                 }
                 continue;
             }
-            result.add(new RenderEntry(entry.section, entry.section.toString(), false));
+            result.add(new RenderEntry(entry.source, entry.section, entry.section.toString(), false));
         }
         return result;
     }
 
-    private float alignedPanelX(float panelWidth, float maxPanelWidth) {
-        return this.x + switch (alignment.getValue()) {
-            case Left -> 0.0f;
-            case Center -> (maxPanelWidth - panelWidth) / 2.0f;
-            case Right -> maxPanelWidth - panelWidth;
-        };
+    private PanelPosition getPanelPosition(String source, float defaultY) {
+        if (source == null) {
+            if (conditionPanelPosition == null) conditionPanelPosition = new PanelPosition(0.0f, defaultY);
+            return conditionPanelPosition;
+        }
+        return panelPositions.computeIfAbsent(source, _ -> new PanelPosition(0.0f, defaultY));
+    }
+
+    private void clampPanelPosition(PanelPosition position, float panelWidth, float panelHeight) {
+        float minX = -this.x;
+        float minY = -this.y;
+        float maxX = Math.max(minX, LuminRenderSystem.getScaledWidth() - this.x - panelWidth);
+        float maxY = Math.max(minY, LuminRenderSystem.getScaledHeight() - this.y - panelHeight);
+        position.x = Mth.clamp(position.x, minX, maxX);
+        position.y = Mth.clamp(position.y, minY, maxY);
     }
 
     private void drawPanel(float x, float y, float width, float height) {
@@ -330,9 +425,35 @@ public final class CustomTextHud extends HudModule {
         }
     }
 
-    private record RenderEntry(Section section, String text, boolean error) {
+    private record RenderEntry(String source, Section section, String text, boolean error) {
     }
 
-    private record PanelLayout(float offsetX, float offsetY, float width, float height) {
+    private record PanelLayout(String source, float offsetX, float offsetY, float width, float height) {
+    }
+
+    private record PreparedPanel(RenderEntry entry, PanelPosition position, float width) {
+    }
+
+    private static final class PanelPosition {
+        private float x;
+        private float y;
+        private float width = Float.NaN;
+
+        private PanelPosition(float x, float y) {
+            this.x = x;
+            this.y = y;
+        }
+
+        private void resize(float newWidth, HorizontalAlignment alignment) {
+            if (Float.isFinite(width)) {
+                float delta = newWidth - width;
+                x -= switch (alignment) {
+                    case Left -> 0.0f;
+                    case Center -> delta / 2.0f;
+                    case Right -> delta;
+                };
+            }
+            width = newWidth;
+        }
     }
 }

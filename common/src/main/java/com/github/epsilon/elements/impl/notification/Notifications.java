@@ -77,6 +77,7 @@ public class Notifications extends HudModule {
         if (entries.isEmpty()) return;
 
         float resolvedHeight = Math.max(boxHeight, totalHeight);
+        setBounds(anchorWidth, boxHeight);
         float currentY = getBaseY(resolvedHeight);
 
         for (RenderEntry entry : entries) {
@@ -85,7 +86,6 @@ public class Notifications extends HudModule {
             currentY += entry.frame.occupiedHeight;
         }
 
-        setBounds(anchorWidth, boxHeight);
     }
 
     private float getSubTitleScale(float scale) {

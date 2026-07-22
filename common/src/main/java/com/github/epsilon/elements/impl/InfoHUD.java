@@ -72,6 +72,15 @@ public abstract class InfoHUD extends HudModule {
         return !background.getValue();
     }
 
+    @Override
+    protected HorizontalAnchor getResizeHorizontalAnchor() {
+        return switch (alignment.getValue()) {
+            case Left -> HorizontalAnchor.Left;
+            case Center -> HorizontalAnchor.Center;
+            case Right -> HorizontalAnchor.Right;
+        };
+    }
+
     protected abstract String label();
 
     protected abstract String value();
@@ -100,6 +109,7 @@ public abstract class InfoHUD extends HudModule {
         float valueWidth = renderer.getWidth(value, textScale);
         float panelWidth = Math.max(minimumWidth, pad * 2f + labelWidth + colonWidth + labelGap + valueWidth);
         float panelHeight = pad * 2f + renderer.getHeight(textScale);
+        setBounds(panelWidth, panelHeight);
 
         drawBackground(panelWidth, panelHeight);
         float lineY = this.y + pad;
@@ -110,7 +120,6 @@ public abstract class InfoHUD extends HudModule {
         renderScope().text(label(), labelX, lineY, textScale, labelColor.getValue());
         renderScope().text(":", colonX, lineY, textScale, labelColor.getValue());
         renderScope().text(value, valueX, lineY, textScale, valueColor.getValue());
-        setBounds(panelWidth, panelHeight);
     }
 
     protected final float alignedX(float panelWidth, float contentWidth, float pad) {
@@ -322,6 +331,7 @@ public abstract class InfoHUD extends HudModule {
             float lineHeight = renderer.getHeight(textScale);
             float panelHeight = pad * 2f + lineHeight
                     + (showVerticalSpeed.getValue() ? spacing + lineHeight : 0f);
+            setBounds(panelWidth, panelHeight);
 
             drawBackground(panelWidth, panelHeight);
             float y = this.y + pad;
@@ -329,7 +339,6 @@ public abstract class InfoHUD extends HudModule {
             if (showVerticalSpeed.getValue()) {
                 renderSpeedLine(renderer, verticalLabel, verticalValue, textScale, y + lineHeight + spacing, panelWidth);
             }
-            setBounds(panelWidth, panelHeight);
         }
 
         private float lineWidth(TextRenderer renderer, String lineLabel, double metersPerSecond, float textScale) {
@@ -425,13 +434,13 @@ public abstract class InfoHUD extends HudModule {
             }
             panelHeight += spacing * Math.max(0, lines.size() - 1);
             float panelWidth = Math.max(minimumWidth, pad * 2f + width);
+            setBounds(panelWidth, panelHeight);
             drawBackground(panelWidth, panelHeight);
             float y = this.y + pad;
             for (CoordinateLine line : lines) {
                 renderLine(renderer, line, y, panelWidth);
                 y += renderer.getHeight(line.scale()) + spacing;
             }
-            setBounds(panelWidth, panelHeight);
         }
 
         private void renderLine(TextRenderer renderer, CoordinateLine line, float y, float panelWidth) {
@@ -591,6 +600,7 @@ public abstract class InfoHUD extends HudModule {
             float contentWidth = labelWidth + firstColonWidth + targetWidth + secondColonWidth + coordinatesWidth;
             float panelWidth = Math.max(minimumWidth, pad * 2f + contentWidth);
             float panelHeight = pad * 2f + renderer.getHeight(textScale);
+            setBounds(panelWidth, panelHeight);
 
             drawBackground(panelWidth, panelHeight);
             float x = alignedX(panelWidth, contentWidth, pad);
@@ -606,7 +616,6 @@ public abstract class InfoHUD extends HudModule {
                 x += colonWidth + gap;
                 renderScope().text(target.coordinates(), x, y, textScale, valueColor.getValue());
             }
-            setBounds(panelWidth, panelHeight);
         }
 
         private LookingAtTarget target() {

@@ -1,5 +1,6 @@
 package com.github.epsilon.gui.hudeditor;
 
+import com.github.epsilon.assets.i18n.EpsilonTranslations;
 import com.github.epsilon.elements.HudModule;
 import com.github.epsilon.graphics.LuminRenderSystem;
 import com.github.epsilon.graphics.renderers.TextRenderer;
@@ -51,6 +52,7 @@ public class HudEditorScreen extends Screen {
     private int renderFrameId;
     private int panelElementCount = -1;
     private HudModule selectedElement;
+    private int selectedPart = -1;
     private HudModule draggingElement;
     private float dragOffsetX;
     private float dragOffsetY;
@@ -154,7 +156,9 @@ public class HudEditorScreen extends Screen {
             if (!selected && !hover) continue;
             List<UiRect> editorBounds = element.getEditorBounds();
             for (int i = 0; i < editorBounds.size(); i++) {
-                drawElementFrame(editorScope, uiTextMetrics, element, editorBounds.get(i), selected, hover, i == 0);
+                boolean selectedPartFrame = selected && (selectedPart < 0 || selectedPart == i);
+                drawElementFrame(editorScope, uiTextMetrics, element, editorBounds.get(i), selectedPartFrame, hover,
+                        selectedPartFrame);
             }
         }
         flushEditorLayer();
@@ -223,8 +227,10 @@ public class HudEditorScreen extends Screen {
     }
 
     private void drawCanvasChrome() {
-        String title = "HUD Editor";
-        String subtitle = selectedElement == null ? "Select and drag an element" : selectedElement.getTranslatedName();
+        String title = EpsilonTranslations.Gui.HUD_EDITOR_TITLE.getTranslatedName();
+        String subtitle = selectedElement == null
+                ? EpsilonTranslations.Gui.HUD_EDITOR_SELECT.getTranslatedName()
+                : selectedElement.getTranslatedName();
         float titleScale = 0.64f;
         float subtitleScale = 0.56f;
         float titleW = textMetrics.getWidth(title, titleScale);
@@ -376,13 +382,16 @@ public class HudEditorScreen extends Screen {
             HudModule element = findElementAt(epsilonEvent.x(), epsilonEvent.y(), false);
             if (element != null) {
                 selectedElement = element;
+                selectedPart = element.getEditorPartAt(epsilonEvent.x(), epsilonEvent.y());
                 draggingElement = element;
-                dragOffsetX = (float) epsilonEvent.x() - element.x;
-                dragOffsetY = (float) epsilonEvent.y() - element.y;
+                UiRect partBounds = element.getEditorPartBounds(selectedPart);
+                dragOffsetX = (float) epsilonEvent.x() - partBounds.x();
+                dragOffsetY = (float) epsilonEvent.y() - partBounds.y();
                 currentSnap = SnapInfo.none();
                 return true;
             }
             selectedElement = null;
+            selectedPart = -1;
             currentSnap = SnapInfo.none();
             return true;
         }
@@ -411,7 +420,8 @@ public class HudEditorScreen extends Screen {
         if (draggingElement != null) {
             double epsilonMouseX = LuminRenderSystem.toEpsilonMouseX(event.x());
             double epsilonMouseY = LuminRenderSystem.toEpsilonMouseY(event.y());
-            moveElementTo(draggingElement, (float) epsilonMouseX - dragOffsetX, (float) epsilonMouseY - dragOffsetY, true);
+            moveEditorPartTo(draggingElement, selectedPart, (float) epsilonMouseX - dragOffsetX,
+                    (float) epsilonMouseY - dragOffsetY, true);
             return true;
         }
         if (hudPanel != null) {
@@ -437,39 +447,44 @@ public class HudEditorScreen extends Screen {
         }
 
         float step = event.hasShiftDown() ? 10.0f : 1.0f;
+        UiRect selectedBounds = selectedElement.getEditorPartBounds(selectedPart);
         return switch (event.key()) {
             case GLFW.GLFW_KEY_LEFT -> {
-                moveElementTo(selectedElement, selectedElement.x - step, selectedElement.y, false);
+                moveEditorPartTo(selectedElement, selectedPart, selectedBounds.x() - step, selectedBounds.y(), false);
                 yield true;
             }
             case GLFW.GLFW_KEY_RIGHT -> {
-                moveElementTo(selectedElement, selectedElement.x + step, selectedElement.y, false);
+                moveEditorPartTo(selectedElement, selectedPart, selectedBounds.x() + step, selectedBounds.y(), false);
                 yield true;
             }
             case GLFW.GLFW_KEY_UP -> {
-                moveElementTo(selectedElement, selectedElement.x, selectedElement.y - step, false);
+                moveEditorPartTo(selectedElement, selectedPart, selectedBounds.x(), selectedBounds.y() - step, false);
                 yield true;
             }
             case GLFW.GLFW_KEY_DOWN -> {
-                moveElementTo(selectedElement, selectedElement.x, selectedElement.y + step, false);
+                moveEditorPartTo(selectedElement, selectedPart, selectedBounds.x(), selectedBounds.y() + step, false);
                 yield true;
             }
             case GLFW.GLFW_KEY_DELETE, GLFW.GLFW_KEY_BACKSPACE -> {
                 selectedElement.setEnabled(false);
                 selectedElement = null;
+                selectedPart = -1;
                 yield true;
             }
             default -> false;
         };
     }
 
-    private void moveElementTo(HudModule element, float targetX, float targetY, boolean snap) {
-        SnapInfo snapInfo = snap ? computeSnap(element, targetX, targetY) : new SnapInfo(targetX, targetY, Float.NaN, Float.NaN);
+    private void moveEditorPartTo(HudModule element, int part, float targetX, float targetY, boolean snap) {
+        UiRect bounds = element.getEditorPartBounds(part);
+        SnapInfo snapInfo = snap
+                ? computeSnap(bounds.width(), bounds.height(), targetX, targetY)
+                : new SnapInfo(targetX, targetY, Float.NaN, Float.NaN);
         currentSnap = snapInfo;
-        element.moveTo(snapInfo.resolvedX(), snapInfo.resolvedY());
+        element.moveEditorPartTo(part, snapInfo.resolvedX(), snapInfo.resolvedY());
     }
 
-    private SnapInfo computeSnap(HudModule element, float targetX, float targetY) {
+    private SnapInfo computeSnap(float width, float height, float targetX, float targetY) {
         float screenW = LuminRenderSystem.getScaledWidth();
         float screenH = LuminRenderSystem.getScaledHeight();
         float snappedX = targetX;
@@ -478,8 +493,8 @@ public class HudEditorScreen extends Screen {
         float horizontalGuide = Float.NaN;
 
         float leftDelta = Math.abs(targetX);
-        float centerDelta = Math.abs(targetX + element.width / 2.0f - screenW / 2.0f);
-        float rightDelta = Math.abs(targetX + element.width - screenW);
+        float centerDelta = Math.abs(targetX + width / 2.0f - screenW / 2.0f);
+        float rightDelta = Math.abs(targetX + width - screenW);
         float bestX = leftDelta;
         int bestXIndex = 0;
         if (centerDelta < bestX) {
@@ -495,17 +510,17 @@ public class HudEditorScreen extends Screen {
                 snappedX = 0.0f;
                 verticalGuide = 0.0f;
             } else if (bestXIndex == 1) {
-                snappedX = screenW / 2.0f - element.width / 2.0f;
+                snappedX = screenW / 2.0f - width / 2.0f;
                 verticalGuide = screenW / 2.0f;
             } else {
-                snappedX = screenW - element.width;
+                snappedX = screenW - width;
                 verticalGuide = screenW;
             }
         }
 
         float topDelta = Math.abs(targetY);
-        float middleDelta = Math.abs(targetY + element.height / 2.0f - screenH / 2.0f);
-        float bottomDelta = Math.abs(targetY + element.height - screenH);
+        float middleDelta = Math.abs(targetY + height / 2.0f - screenH / 2.0f);
+        float bottomDelta = Math.abs(targetY + height - screenH);
         float bestY = topDelta;
         int bestYIndex = 0;
         if (middleDelta < bestY) {
@@ -521,10 +536,10 @@ public class HudEditorScreen extends Screen {
                 snappedY = 0.0f;
                 horizontalGuide = 0.0f;
             } else if (bestYIndex == 1) {
-                snappedY = screenH / 2.0f - element.height / 2.0f;
+                snappedY = screenH / 2.0f - height / 2.0f;
                 horizontalGuide = screenH / 2.0f;
             } else {
-                snappedY = screenH - element.height;
+                snappedY = screenH - height;
                 horizontalGuide = screenH;
             }
         }
@@ -558,6 +573,7 @@ public class HudEditorScreen extends Screen {
     private void validateSelection() {
         if (selectedElement != null && !selectedElement.isEnabled()) {
             selectedElement = null;
+            selectedPart = -1;
             draggingElement = null;
             currentSnap = SnapInfo.none();
         }
@@ -600,6 +616,7 @@ public class HudEditorScreen extends Screen {
         super.removed();
         popupHost.close();
         draggingElement = null;
+        selectedPart = -1;
         currentSnap = SnapInfo.none();
     }
 

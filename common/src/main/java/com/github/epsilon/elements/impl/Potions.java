@@ -87,22 +87,24 @@ public class Potions extends HudModule {
 
         HorizontalAnchor hAnchor = getHorizontalAnchor();
 
-        float currentY = this.y;
         boolean first = true;
-
         float maxWidth = 0f;
         float totalHeight = 0f;
 
         for (EffectInfo info : items) {
             if (info.alpha <= 0.001f) continue;
-
             float alpha = Mth.clamp(info.alpha, 0f, 1f);
-
-            // Track bounds
             if (info.totalWidth > maxWidth) maxWidth = info.totalWidth;
             totalHeight += (rowHeight + (first ? 0f : spacing)) * alpha;
+            first = false;
+        }
+        setBounds(maxWidth, totalHeight);
 
-            // Update render position
+        float currentY = this.y;
+        first = true;
+        for (EffectInfo info : items) {
+            if (info.alpha <= 0.001f) continue;
+            float alpha = Mth.clamp(info.alpha, 0f, 1f);
             if (!first) currentY += spacing * alpha;
             first = false;
 
@@ -162,7 +164,6 @@ public class Potions extends HudModule {
             currentY += rowHeight * alpha;
         }
 
-        setBounds(maxWidth, totalHeight);
     }
 
     private float computeRowX(float rowWidth, HorizontalAnchor hAnchor) {

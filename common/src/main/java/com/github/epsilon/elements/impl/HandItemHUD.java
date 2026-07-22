@@ -43,6 +43,15 @@ public abstract class HandItemHUD extends HudModule {
         return !background.getValue();
     }
 
+    @Override
+    protected HorizontalAnchor getResizeHorizontalAnchor() {
+        return switch (alignment.getValue()) {
+            case Left -> HorizontalAnchor.Left;
+            case Center -> HorizontalAnchor.Center;
+            case Right -> HorizontalAnchor.Right;
+        };
+    }
+
     protected abstract ItemStack getStack();
 
     protected final String emptyText() {

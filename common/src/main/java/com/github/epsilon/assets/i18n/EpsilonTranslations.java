@@ -24,6 +24,8 @@ public final class EpsilonTranslations {
             Gui.CLIENT_SETTINGS,
             Gui.NO_MODULE,
             Gui.MODULES,
+            Gui.HUD_EDITOR_TITLE,
+            Gui.HUD_EDITOR_SELECT,
             Gui.MAINMENU_SINGLEPLAYER,
             Gui.MAINMENU_MULTIPLAYER,
             Gui.MAINMENU_OPTIONS,
@@ -156,6 +158,8 @@ public final class EpsilonTranslations {
         public static final TranslateComponent CLIENT_SETTINGS = create("gui", "clientsettings");
         public static final TranslateComponent NO_MODULE = create("gui", "no_module");
         public static final TranslateComponent MODULES = create("gui", "modules");
+        public static final TranslateComponent HUD_EDITOR_TITLE = create("gui", "hud_editor.title");
+        public static final TranslateComponent HUD_EDITOR_SELECT = create("gui", "hud_editor.select");
 
         public static final TranslateComponent MAINMENU_SINGLEPLAYER = create("gui", "mainmenu.singleplayer");
         public static final TranslateComponent MAINMENU_MULTIPLAYER = create("gui", "mainmenu.multiplayer");

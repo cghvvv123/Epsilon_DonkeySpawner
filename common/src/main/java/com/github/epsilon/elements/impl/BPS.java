@@ -102,6 +102,7 @@ public class BPS extends HudModule {
 
         float panelW = 148f * s;
         float panelH = 58f * s;
+        setBounds(panelW, panelH);
 
         if (backgroundBlur.getValue()) {
             BlurShader.INSTANCE.render(this.x, this.y, panelW, panelH, radius, blurStrength.getValue());
@@ -166,7 +167,6 @@ public class BPS extends HudModule {
         float graphH = graphHeight.getValue().floatValue() * s;
         drawGraph(scope, graphX, graphY, graphW, graphH, s);
 
-        setBounds(panelW, panelH);
     }
 
     private void drawGraph(UiTree.Scope scope, float x, float y, float w, float h, float s) {

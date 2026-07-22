@@ -44,6 +44,15 @@ public class LagNotifierHUD extends HudModule {
     }
 
     @Override
+    protected HorizontalAnchor getResizeHorizontalAnchor() {
+        return switch (alignment.getValue()) {
+            case Left -> HorizontalAnchor.Left;
+            case Center -> HorizontalAnchor.Center;
+            case Right -> HorizontalAnchor.Right;
+        };
+    }
+
+    @Override
     protected void onEnable() {
         lastServerTickAt = System.currentTimeMillis();
     }
@@ -68,12 +77,12 @@ public class LagNotifierHUD extends HudModule {
         TextRenderer renderer = textRendererSupplier.get();
         Color color = seconds > 10.0 ? criticalColor.getValue() : seconds > 3.0 ? warningColor.getValue() : normalColor.getValue();
         float width = Math.max(110f, renderer.getWidth(text, textScale));
+        setBounds(width, renderer.getHeight(textScale));
         float textX = this.x + switch (alignment.getValue()) {
             case Left -> 0f;
             case Center -> (width - renderer.getWidth(text, textScale)) / 2f;
             case Right -> width - renderer.getWidth(text, textScale);
         };
         renderScope().text(text, textX, this.y, textScale, color);
-        setBounds(width, renderer.getHeight(textScale));
     }
 }

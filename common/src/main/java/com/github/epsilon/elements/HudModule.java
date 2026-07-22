@@ -75,11 +75,35 @@ public abstract class HudModule extends Module {
 
     protected final void setBounds(float width, float height) {
         boolean changed = this.width != width || this.height != height;
+        float oldWidth = this.width;
+        float oldHeight = this.height;
+        HorizontalAnchor resizeAnchor = getResizeHorizontalAnchor();
+        VerticalAnchor verticalResizeAnchor = getResizeVerticalAnchor();
+        float resizedX = switch (resizeAnchor) {
+            case Left -> this.x;
+            case Center -> this.x + (oldWidth - width) / 2.0f;
+            case Right -> this.x + oldWidth - width;
+        };
+        float resizedY = switch (verticalResizeAnchor) {
+            case Top -> this.y;
+            case Center -> this.y + (oldHeight - height) / 2.0f;
+            case Bottom -> this.y + oldHeight - height;
+        };
         this.width = width;
         this.height = height;
         if (changed) {
-            applyRenderPosition(getAnchoredRenderX(), getAnchoredRenderY(), false);
+            applyRenderPosition(resizedX, resizedY, false);
+            anchorX = HudLayoutHelper.toAnchorX(horizontalAnchor, this.x, this.width, getScreenWidth());
+            anchorY = HudLayoutHelper.toAnchorY(verticalAnchor, this.y, this.height, getScreenHeight());
         }
+    }
+
+    protected HorizontalAnchor getResizeHorizontalAnchor() {
+        return horizontalAnchor;
+    }
+
+    protected VerticalAnchor getResizeVerticalAnchor() {
+        return verticalAnchor;
     }
 
     public final boolean contains(double mouseX, double mouseY) {
@@ -92,6 +116,24 @@ public abstract class HudModule extends Module {
      */
     public List<UiRect> getEditorBounds() {
         return List.of(new UiRect(x, y, width, height));
+    }
+
+    public int getEditorPartAt(double mouseX, double mouseY) {
+        List<UiRect> bounds = getEditorBounds();
+        for (int i = bounds.size() - 1; i >= 0; i--) {
+            if (bounds.get(i).contains(mouseX, mouseY)) return i;
+        }
+        return -1;
+    }
+
+    public UiRect getEditorPartBounds(int part) {
+        List<UiRect> bounds = getEditorBounds();
+        if (part < 0 || part >= bounds.size()) return new UiRect(x, y, width, height);
+        return bounds.get(part);
+    }
+
+    public void moveEditorPartTo(int part, float x, float y) {
+        moveTo(x, y);
     }
 
     public final void moveTo(float x, float y) {

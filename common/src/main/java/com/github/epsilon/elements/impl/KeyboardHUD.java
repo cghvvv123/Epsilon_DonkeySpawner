@@ -47,21 +47,27 @@ public class KeyboardHUD extends HudModule {
         float s = scale.getValue().floatValue();
         float key = 22f * s;
         float gap = 3f * s;
-        drawKey("W", this.x + key + gap, this.y, key, key, mc.options.keyUp.isDown(), s);
-        drawKey("A", this.x, this.y + key + gap, key, key, mc.options.keyLeft.isDown(), s);
-        drawKey("S", this.x + key + gap, this.y + key + gap, key, key, mc.options.keyDown.isDown(), s);
-        drawKey("D", this.x + (key + gap) * 2f, this.y + key + gap, key, key, mc.options.keyRight.isDown(), s);
 
         float width = key * 3f + gap * 2f;
         float height = key * 2f + gap;
         if (showMouse.getValue()) {
-            float mouseY = this.y + height + gap;
-            float mouseWidth = (width - gap) / 2f;
-            drawKey(mouseLabel("LMB", leftClicks), this.x, mouseY, mouseWidth, key, mc.mouseHandler.isLeftPressed(), s);
-            drawKey(mouseLabel("RMB", rightClicks), this.x + mouseWidth + gap, mouseY, mouseWidth, key, mc.mouseHandler.isRightPressed(), s);
             height += key + gap;
         }
         setBounds(width, height);
+        drawKeys(width, key, gap, s);
+    }
+
+    private void drawKeys(float width, float key, float gap, float s) {
+        drawKey("W", this.x + key + gap, this.y, key, key, mc.options.keyUp.isDown(), s);
+        drawKey("A", this.x, this.y + key + gap, key, key, mc.options.keyLeft.isDown(), s);
+        drawKey("S", this.x + key + gap, this.y + key + gap, key, key, mc.options.keyDown.isDown(), s);
+        drawKey("D", this.x + (key + gap) * 2f, this.y + key + gap, key, key, mc.options.keyRight.isDown(), s);
+        if (showMouse.getValue()) {
+            float mouseY = this.y + key * 2f + gap * 2f;
+            float mouseWidth = (width - gap) / 2f;
+            drawKey(mouseLabel("LMB", leftClicks), this.x, mouseY, mouseWidth, key, mc.mouseHandler.isLeftPressed(), s);
+            drawKey(mouseLabel("RMB", rightClicks), this.x + mouseWidth + gap, mouseY, mouseWidth, key, mc.mouseHandler.isRightPressed(), s);
+        }
     }
 
     private void drawKey(String text, float x, float y, float width, float height, boolean pressed, float scale) {

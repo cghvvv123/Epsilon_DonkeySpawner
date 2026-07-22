@@ -63,6 +63,7 @@ public class ContainerHUD extends HudModule {
 
         float totalWidth = padding * 2f + COLS * slotSize + (COLS - 1) * gap;
         float totalHeight = padding * 2f + rows * slotSize + (rows - 1) * gap;
+        setBounds(totalWidth, totalHeight);
 
         Color color = heldContainer.isEmpty() ? backgroundColor.getValue() : ContainerItemUtils.backgroundColor(heldContainer);
         if (backgroundBlur.getValue()) BlurShader.INSTANCE.render(this.x, this.y, totalWidth, totalHeight, radius, blurStrength.getValue());
@@ -77,7 +78,6 @@ public class ContainerHUD extends HudModule {
                 renderScope().roundRect(slotX, slotY, slotSize, slotSize, 2.0f * s, slotColor.getValue());
             }
         }
-        setBounds(totalWidth, totalHeight);
     }
 
     @Override

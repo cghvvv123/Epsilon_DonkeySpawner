@@ -28,6 +28,10 @@
       "clientsettings": "Client Settings",
       "no_module": "No Module",
       "modules": "Modules",
+      "hud_editor": {
+        "title": "HUD Editor",
+        "select": "Select and drag an element"
+      },
       "mainmenu": {
         "singleplayer": "Singleplayer",
         "multiplayer": "Multiplayer",

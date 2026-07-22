@@ -28,6 +28,10 @@
       "clientsettings": "客户端设置",
       "no_module": "无模块",
       "modules": "模块",
+      "hud_editor": {
+        "title": "HUD 编辑器",
+        "select": "选择并拖动一个 HUD 元素"
+      },
       "mainmenu": {
         "singleplayer": "单人游戏",
         "multiplayer": "多人游戏",

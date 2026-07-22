@@ -31,6 +31,15 @@ public class Watermark extends HudModule {
         return true;
     }
 
+    @Override
+    protected HorizontalAnchor getResizeHorizontalAnchor() {
+        return switch (alignment.getValue()) {
+            case Left -> HorizontalAnchor.Left;
+            case Center -> HorizontalAnchor.Center;
+            case Right -> HorizontalAnchor.Right;
+        };
+    }
+
     private final DoubleSetting scale = doubleSetting("Scale", 1.0, 0.5, 2.0, 0.1);
     private final EnumSetting<HorizontalAlignment> alignment = enumSetting("Alignment", HorizontalAlignment.Left);
     private final ColorSetting textColor = colorSetting("Text Color", new Color(255, 255, 255, 235));
@@ -46,6 +55,8 @@ public class Watermark extends HudModule {
 
         float textWidth = textRenderer.getWidth(traditionText, scaledScale, StaticFontLoader.OSAKA_CHIPS);
         float totalWidth = Math.max(200f * scale.getValue().floatValue(), textWidth + 3f * scaledScale);
+        float totalHeight = textRenderer.getHeight(scaledScale, StaticFontLoader.OSAKA_CHIPS) + 3f * scaledScale;
+        setBounds(totalWidth, totalHeight);
         float textX = this.x + switch (alignment.getValue()) {
             case Left -> 0f;
             case Center -> (totalWidth - textWidth) / 2f;
@@ -53,9 +64,6 @@ public class Watermark extends HudModule {
         };
         renderScope().text(traditionText, textX, this.y, scaledScale, textColor.getValue(), StaticFontLoader.OSAKA_CHIPS);
 
-        float totalHeight = textRenderer.getHeight(scaledScale, StaticFontLoader.OSAKA_CHIPS) + 3f * scaledScale;
-
-        setBounds(totalWidth, totalHeight);
     }
 
 }

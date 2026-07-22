@@ -91,9 +91,9 @@ public class ScaffoldBlock extends HudModule {
         UiTree.Scope scope = renderScope();
 
         Layout layout = createLayout(textRenderer);
+        setBounds(layout.totalWidth(), layout.height());
         drawBackground(scope, layout, animation);
         drawText(scope, textRenderer, layout, animation);
-        setBounds(layout.totalWidth(), layout.height());
     }
 
     private boolean shouldShowHud(int liveBlockCount) {

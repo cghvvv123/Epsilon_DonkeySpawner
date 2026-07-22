@@ -61,6 +61,16 @@ public class ArmorHUD extends HudModule {
     }
 
     @Override
+    protected HorizontalAnchor getResizeHorizontalAnchor() {
+        if (orientation.is(Orientation.Horizontal)) return getHorizontalAnchor();
+        return switch (alignment.getValue()) {
+            case Left -> HorizontalAnchor.Left;
+            case Center -> HorizontalAnchor.Center;
+            case Right -> HorizontalAnchor.Right;
+        };
+    }
+
+    @Override
     public void render(DeltaTracker deltaTracker) {
         float s = scale.getValue().floatValue();
         float itemSize = 16f * s;
