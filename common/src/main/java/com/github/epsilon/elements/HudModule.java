@@ -2,12 +2,15 @@ package com.github.epsilon.elements;
 
 import com.github.epsilon.graphics.LuminRenderSystem;
 import com.github.epsilon.gui.hudeditor.HudLayoutHelper;
+import com.github.epsilon.gui.lib.UiRect;
 import com.github.epsilon.gui.lib.UiTree;
 import com.github.epsilon.gui.lib.render.UiRenderBatch;
 import com.github.epsilon.modules.Module;
 import net.minecraft.client.DeltaTracker;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.util.Mth;
+
+import java.util.List;
 
 public abstract class HudModule extends Module {
 
@@ -80,7 +83,15 @@ public abstract class HudModule extends Module {
     }
 
     public final boolean contains(double mouseX, double mouseY) {
-        return mouseX >= x && mouseX <= x + width && mouseY >= y && mouseY <= y + height;
+        return getEditorBounds().stream().anyMatch(bounds -> bounds.contains(mouseX, mouseY));
+    }
+
+    /**
+     * 返回 HUD 编辑器中用于命中检测和绘制框线的区域。
+     * 普通 HUD 只有一个区域；复合 HUD 可以返回多个独立区域。
+     */
+    public List<UiRect> getEditorBounds() {
+        return List.of(new UiRect(x, y, width, height));
     }
 
     public final void moveTo(float x, float y) {
@@ -168,6 +179,7 @@ public abstract class HudModule extends Module {
     public final void renderWithBatch(DeltaTracker deltaTracker, UiRenderBatch renderBatch) {
         UiTree.Scope previous = currentRenderScope;
         UiTree.Scope scope = new UiTree.Scope();
+        scope.setTextShadow(shouldRenderTextShadow());
         currentRenderScope = scope;
         render(deltaTracker);
         currentRenderScope = previous;
@@ -179,6 +191,13 @@ public abstract class HudModule extends Module {
             throw new IllegalStateException("HUD elements must render through renderWithBatch.");
         }
         return currentRenderScope;
+    }
+
+    /**
+     * 没有背景时由 HUD 文本启用阴影，提高纯文字 HUD 在浅色场景中的可读性。
+     */
+    protected boolean shouldRenderTextShadow() {
+        return false;
     }
 
     public abstract void render(DeltaTracker deltaTracker);

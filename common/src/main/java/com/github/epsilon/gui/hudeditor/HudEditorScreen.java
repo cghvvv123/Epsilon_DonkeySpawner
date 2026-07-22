@@ -17,12 +17,14 @@ import com.github.epsilon.gui.lib.scene.UiScene;
 import com.github.epsilon.gui.panel.PanelScreen;
 import com.github.epsilon.gui.panel.popup.PanelPopupHost;
 import com.github.epsilon.gui.panel.popup.RegistryListSelectPopup;
+import com.github.epsilon.gui.panel.popup.StringListSelectPopup;
 import com.github.epsilon.gui.theme.EpsilonUiTheme;
 import com.github.epsilon.gui.theme.MD3Theme;
 import com.github.epsilon.holders.HudElementHolder;
 import com.github.epsilon.managers.Managers;
 import com.github.epsilon.modules.impl.ClientSetting;
 import com.github.epsilon.settings.impl.RegistryListSetting;
+import com.github.epsilon.settings.impl.StringListSetting;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.input.CharacterEvent;
@@ -150,7 +152,10 @@ public class HudEditorScreen extends Screen {
             boolean selected = element == selectedElement;
             boolean hover = element == hovered;
             if (!selected && !hover) continue;
-            drawElementFrame(editorScope, uiTextMetrics, element, selected, hover);
+            List<UiRect> editorBounds = element.getEditorBounds();
+            for (int i = 0; i < editorBounds.size(); i++) {
+                drawElementFrame(editorScope, uiTextMetrics, element, editorBounds.get(i), selected, hover, i == 0);
+            }
         }
         flushEditorLayer();
 
@@ -258,18 +263,19 @@ public class HudEditorScreen extends Screen {
     }
 
     private void drawElementFrame(UiTree.Scope scope, UiTextMetrics textMetrics,
-                                  HudModule element, boolean selected, boolean hover) {
-        float x = element.x - ELEMENT_PADDING;
-        float y = element.y - ELEMENT_PADDING;
-        float w = element.width + ELEMENT_PADDING * 2.0f;
-        float h = element.height + ELEMENT_PADDING * 2.0f;
+                                  HudModule element, UiRect elementBounds, boolean selected, boolean hover,
+                                  boolean primary) {
+        float x = elementBounds.x() - ELEMENT_PADDING;
+        float y = elementBounds.y() - ELEMENT_PADDING;
+        float w = elementBounds.width() + ELEMENT_PADDING * 2.0f;
+        float h = elementBounds.height() + ELEMENT_PADDING * 2.0f;
         Color frameColor = selected ? MD3Theme.PRIMARY : MD3Theme.withAlpha(MD3Theme.OUTLINE, 150);
         Color fillColor = selected ? MD3Theme.withAlpha(MD3Theme.PRIMARY_CONTAINER, 44) : MD3Theme.withAlpha(MD3Theme.SURFACE_CONTAINER_HIGH, hover ? 48 : 24);
 
         scope.rect(x, y, w, h, fillColor);
         scope.rectOutline(x, y, w, h, selected ? 1.2f : 0.8f, frameColor);
 
-        if (selected) {
+        if (selected && primary) {
             drawAnchorMarker(scope, element, frameColor);
             drawElementLabel(scope, textMetrics, element, x, y);
         }
@@ -579,6 +585,14 @@ public class HudEditorScreen extends Screen {
                 Math.min(300.0f, LuminRenderSystem.getScaledHeight() - 28.0f)
         );
         popupHost.open(RegistryListSelectPopup.create(bounds, setting));
+    }
+
+    public void openStringListSettingPopup(StringListSetting setting) {
+        UiRect bounds = popupHost.getCenteredBounds(
+                Math.min(300.0f, LuminRenderSystem.getScaledWidth() - 28.0f),
+                Math.min(260.0f, LuminRenderSystem.getScaledHeight() - 28.0f)
+        );
+        popupHost.open(new StringListSelectPopup(bounds, setting, setting::add, setting::remove));
     }
 
     @Override

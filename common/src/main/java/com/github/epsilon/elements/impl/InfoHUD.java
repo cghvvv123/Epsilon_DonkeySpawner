@@ -67,6 +67,11 @@ public abstract class InfoHUD extends HudModule {
         minimumWidth = width;
     }
 
+    @Override
+    protected boolean shouldRenderTextShadow() {
+        return !background.getValue();
+    }
+
     protected abstract String label();
 
     protected abstract String value();

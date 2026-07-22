@@ -81,6 +81,7 @@ public final class UiTree {
 
         private List<UiNode> nodes = new ArrayList<>();
         private boolean hasActiveAnimations;
+        private boolean textShadow;
         private final List<UiRect> boundStack = new ArrayList<>(List.of(new UiRect(0.0f, 0.0f, 0.0f, 0.0f)));
 
         /**
@@ -415,19 +416,41 @@ public final class UiTree {
         }
 
         public void text(String text, float x, float y, float scale, Color color) {
-            nodes.add(new TextNode(text, resolveX(x), resolveY(y), scale, color, null));
+            addText(text, x, y, scale, color, null);
         }
 
         public void text(int layer, String text, float x, float y, float scale, Color color) {
-            addNode(layer, new TextNode(text, resolveX(x), resolveY(y), scale, color, null));
+            addText(layer, text, x, y, scale, color, null);
         }
 
         public void text(String text, float x, float y, float scale, Color color, TtfFontLoader fontLoader) {
-            nodes.add(new TextNode(text, resolveX(x), resolveY(y), scale, color, fontLoader));
+            addText(text, x, y, scale, color, fontLoader);
         }
 
         public void text(int layer, String text, float x, float y, float scale, Color color, TtfFontLoader fontLoader) {
-            addNode(layer, new TextNode(text, resolveX(x), resolveY(y), scale, color, fontLoader));
+            addText(layer, text, x, y, scale, color, fontLoader);
+        }
+
+        /**
+         * 控制当前 HUD 作用域是否为文字绘制一层轻量黑色阴影。
+         */
+        public void setTextShadow(boolean enabled) {
+            textShadow = enabled;
+        }
+
+        private void addText(String text, float x, float y, float scale, Color color, TtfFontLoader fontLoader) {
+            addText(0, text, x, y, scale, color, fontLoader);
+        }
+
+        private void addText(int layer, String text, float x, float y, float scale, Color color, TtfFontLoader fontLoader) {
+            float resolvedX = resolveX(x);
+            float resolvedY = resolveY(y);
+            if (textShadow && text != null && !text.isEmpty()) {
+                int alpha = Math.clamp(color.getAlpha() * 3 / 4, 0, 150);
+                addNode(layer, new TextNode(text, resolvedX + 0.8f, resolvedY + 0.8f, scale,
+                        new Color(0, 0, 0, alpha), fontLoader));
+            }
+            addNode(layer, new TextNode(text, resolvedX, resolvedY, scale, color, fontLoader));
         }
 
         public void rotatedText(String text, float x, float y, float scale, Color color, float originX, float originY, float rotationDegrees) {

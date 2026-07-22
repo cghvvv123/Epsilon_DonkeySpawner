@@ -38,6 +38,11 @@ public abstract class HandItemHUD extends HudModule {
         super(name, 0f, 0f, 150f, 34f);
     }
 
+    @Override
+    protected boolean shouldRenderTextShadow() {
+        return !background.getValue();
+    }
+
     protected abstract ItemStack getStack();
 
     protected final String emptyText() {

@@ -71,6 +71,11 @@ public class CompassHUD extends HudModule {
     }
 
     @Override
+    protected boolean shouldRenderTextShadow() {
+        return true;
+    }
+
+    @Override
     public void render(DeltaTracker deltaTracker) {
         if (nullCheck()) return;
 

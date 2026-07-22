@@ -26,6 +26,11 @@ public class Watermark extends HudModule {
         super("Watermark", 0f, 0f, 200f, 28f);
     }
 
+    @Override
+    protected boolean shouldRenderTextShadow() {
+        return true;
+    }
+
     private final DoubleSetting scale = doubleSetting("Scale", 1.0, 0.5, 2.0, 0.1);
     private final EnumSetting<HorizontalAlignment> alignment = enumSetting("Alignment", HorizontalAlignment.Left);
     private final ColorSetting textColor = colorSetting("Text Color", new Color(255, 255, 255, 235));

@@ -6,6 +6,7 @@ import com.github.epsilon.events.impl.PlayerTickEvent;
 import com.github.epsilon.graphics.renderers.TextRenderer;
 import com.github.epsilon.graphics.shaders.BlurShader;
 import com.github.epsilon.gui.hudeditor.HudEditorScreen;
+import com.github.epsilon.gui.lib.UiRect;
 import com.github.epsilon.settings.SettingGroup;
 import com.github.epsilon.settings.impl.BoolSetting;
 import com.github.epsilon.settings.impl.ColorSetting;
@@ -66,7 +67,6 @@ public final class CustomTextHud extends HudModule {
     private final DoubleSetting border = doubleSetting("Border", 5.0, 0.0, 24.0, 0.5).group(sgAppearance);
     private final DoubleSetting panelGap = doubleSetting("Panel Gap", 3.0, 0.0, 20.0, 0.5).group(sgAppearance);
     private final EnumSetting<HorizontalAlignment> alignment = enumSetting("Alignment", HorizontalAlignment.Left).group(sgAppearance);
-    private final BoolSetting shadow = boolSetting("Shadow", true).group(sgAppearance);
     private final ColorSetting textColor = colorSetting("Text Color", new Color(245, 247, 250, 255)).group(sgAppearance);
     private final ColorSetting accentColor = colorSetting("Accent Color", new Color(130, 180, 255, 255)).group(sgAppearance);
     private final ColorSetting warningColor = colorSetting("Warning Color", new Color(255, 205, 90, 255)).group(sgAppearance);
@@ -87,6 +87,7 @@ public final class CustomTextHud extends HudModule {
     private boolean conditionVisible = true;
     private int updateTimer;
     private boolean refreshRequested = true;
+    private List<PanelLayout> panelLayouts = List.of();
 
     private CustomTextHud() {
         super("Custom Text HUD", 0.0f, 0.0f, 120.0f, 20.0f);
@@ -96,6 +97,7 @@ public final class CustomTextHud extends HudModule {
     protected void onEnable() {
         refreshRequested = true;
         updateTimer = 0;
+        panelLayouts = List.of();
     }
 
     @Override
@@ -130,6 +132,7 @@ public final class CustomTextHud extends HudModule {
 
         boolean editor = mc.screen instanceof HudEditorScreen;
         if (!conditionVisible && !editor) {
+            panelLayouts = List.of();
             setBounds(20.0f, 20.0f);
             return;
         }
@@ -142,6 +145,7 @@ public final class CustomTextHud extends HudModule {
         List<RenderEntry> renderEntries = buildRenderEntries(editor);
 
         if (renderEntries.isEmpty()) {
+            panelLayouts = List.of();
             setBounds(80.0f, Math.max(18.0f, textHeight + padding * 2.0f));
             return;
         }
@@ -155,14 +159,30 @@ public final class CustomTextHud extends HudModule {
         setBounds(Math.max(20.0f, maxPanelWidth), Math.max(20.0f, totalHeight));
 
         float rowY = this.y;
+        List<PanelLayout> layouts = new ArrayList<>(renderEntries.size());
         for (RenderEntry entry : renderEntries) {
             float textWidth = renderer.getWidth(entry.text, textScale);
             float panelWidth = textWidth + padding * 2.0f;
             float panelX = alignedPanelX(panelWidth, maxPanelWidth);
+            layouts.add(new PanelLayout(panelX - this.x, rowY - this.y, panelWidth, panelHeight));
             drawPanel(panelX, rowY, panelWidth, panelHeight);
             drawSections(renderer, entry, panelX + padding, rowY + padding, textScale);
             rowY += panelHeight + gap;
         }
+        panelLayouts = List.copyOf(layouts);
+    }
+
+    @Override
+    public List<UiRect> getEditorBounds() {
+        if (panelLayouts.isEmpty()) return super.getEditorBounds();
+        return panelLayouts.stream()
+                .map(layout -> new UiRect(x + layout.offsetX(), y + layout.offsetY(), layout.width(), layout.height()))
+                .toList();
+    }
+
+    @Override
+    protected boolean shouldRenderTextShadow() {
+        return !background.getValue();
     }
 
     private void syncCompiledSources() {
@@ -278,16 +298,6 @@ public final class CustomTextHud extends HudModule {
     }
 
     private void drawSections(TextRenderer renderer, RenderEntry entry, float x, float y, float textScale) {
-        if (shadow.getValue()) {
-            float shadowX = x + 0.8f;
-            Section shadowSection = entry.section;
-            while (shadowSection != null) {
-                renderScope().text(shadowSection.text, shadowX, y + 0.8f, textScale, new Color(0, 0, 0, 150));
-                shadowX += renderer.getWidth(shadowSection.text, textScale);
-                shadowSection = shadowSection.next;
-            }
-        }
-
         float sectionX = x;
         Section section = entry.section;
         while (section != null) {
@@ -321,5 +331,8 @@ public final class CustomTextHud extends HudModule {
     }
 
     private record RenderEntry(Section section, String text, boolean error) {
+    }
+
+    private record PanelLayout(float offsetX, float offsetY, float width, float height) {
     }
 }

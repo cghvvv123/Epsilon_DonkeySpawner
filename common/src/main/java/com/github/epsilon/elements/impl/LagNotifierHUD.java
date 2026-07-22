@@ -39,6 +39,11 @@ public class LagNotifierHUD extends HudModule {
     }
 
     @Override
+    protected boolean shouldRenderTextShadow() {
+        return true;
+    }
+
+    @Override
     protected void onEnable() {
         lastServerTickAt = System.currentTimeMillis();
     }

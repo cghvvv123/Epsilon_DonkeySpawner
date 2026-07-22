@@ -14,6 +14,7 @@ import com.github.epsilon.settings.impl.EnumSetting;
 import com.github.epsilon.settings.impl.IntSetting;
 import com.github.epsilon.utils.timer.TimerUtils;
 import com.mojang.blaze3d.vertex.PoseStack;
+import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.protocol.game.ClientboundBlockUpdatePacket;
 import net.minecraft.network.protocol.game.ServerboundSwingPacket;
@@ -25,6 +26,8 @@ import net.minecraft.world.phys.AABB;
 
 import java.awt.*;
 import java.util.ArrayList;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ThreadLocalRandom;
 
 public class Xray extends Module {
@@ -41,8 +44,8 @@ public class Xray extends Module {
     }
 
     private final EnumSetting<Plugin> plugin = enumSetting("Plugin", Plugin.New);
-    public final BoolSetting wallHack = boolSetting("WallHack", false, _ -> mc.levelRenderer.allChanged());
-    private final BoolSetting brutForce = boolSetting("Ore Deobf", false);
+    public final BoolSetting wallHack = boolSetting("WallHack", false, _ -> reloadTerrain());
+    private final BoolSetting brutForce = boolSetting("Ore Deobf", false, _ -> updateDeobfuscationState());
     private final BoolSetting fast = boolSetting("Fast", false, brutForce::getValue);
     private final IntSetting delay = intSetting("Delay", 25, 1, 100, 1, brutForce::getValue);
     private final IntSetting radius = intSetting("Radius", 5, 1, 64, 1, brutForce::getValue);
@@ -61,34 +64,33 @@ public class Xray extends Module {
     private final BoolSetting lava = boolSetting("Lava", false, _ -> reloadTerrain());
 
     private final TimerUtils delayTimer = new TimerUtils();
-    private final ArrayList<BlockPos> ores = new ArrayList<>();
+    private final Set<BlockPos> ores = ConcurrentHashMap.newKeySet();
     private final ArrayList<BlockPos> toCheck = new ArrayList<>();
     private final ArrayList<BlockMemory> checked = new ArrayList<>();
     private BlockPos displayBlock;
     private int done, all;
     private AABB area = new AABB(BlockPos.ZERO);
+    private ClientLevel activeLevel;
 
     @Override
     public void onEnable() {
-        ores.clear();
-        toCheck.clear();
-        checked.clear();
-        toCheck.addAll(getBlocks());
-        all = toCheck.size();
-        done = 0;
-        mc.smartCull = false;
-        mc.levelRenderer.allChanged();
-        area = getArea();
+        activeLevel = null;
+        resetDeobfuscation();
+        ensureWorldInitialized();
     }
 
     @Override
     public void onDisable() {
-        mc.levelRenderer.allChanged();
+        activeLevel = null;
+        resetDeobfuscation();
+        reloadTerrain();
         mc.smartCull = true;
     }
 
     @EventHandler
     private void onPlayerTick(PlayerTickEvent.Pre event) {
+        if (!ensureWorldInitialized()) return;
+
         if (plugin.is(Plugin.New)) {
             checked.forEach(blockMemory -> {
                 if (blockMemory.isDelayed() && !ores.contains(blockMemory.blockPos))
@@ -100,7 +102,7 @@ public class Xray extends Module {
     @EventHandler
     private void onPacketReceive(PacketEvent.Receive event) {
         if (event.getPacket() instanceof ClientboundBlockUpdatePacket pac) {
-            if (isCheckableOre(pac.getBlockState().getBlock()) && !ores.contains(pac.getPos())) {
+            if (isCheckableOre(pac.getBlockState().getBlock())) {
                 ores.add(pac.getPos());
             }
         }
@@ -108,6 +110,8 @@ public class Xray extends Module {
 
     @EventHandler
     private void onMove(MoveEvent event) {
+        if (!ensureWorldInitialized()) return;
+
         if (brutForce.getValue()) {
             if (all != done) {
                 event.setZ(0);
@@ -132,6 +136,8 @@ public class Xray extends Module {
 
     @EventHandler
     private void onRender3D(Render3DEvent event) {
+        if (!ensureWorldInitialized()) return;
+
         PoseStack stack = event.getPoseStack();
 
         for (BlockPos pos : ores) {
@@ -236,11 +242,14 @@ public class Xray extends Module {
         int radius_ = plugin.is(Plugin.New) ? Math.min(4, radius.getValue()) : radius.getValue();
         int down_ = plugin.is(Plugin.New) ? Math.min(3, down.getValue()) : down.getValue();
         int up_ = plugin.is(Plugin.New) ? Math.min(4, up.getValue()) : up.getValue();
+        double playerX = mc.player.getX();
+        double playerY = mc.player.getY();
+        double playerZ = mc.player.getZ();
 
         ArrayList<BlockPos> positions = new ArrayList<>();
-        for (int x = (int) (mc.player.getX() - radius_); x < mc.player.getX() + radius_; x++) {
-            for (int y = (int) (mc.player.getY() - down_); y < mc.player.getY() + up_; y++) {
-                for (int z = (int) (mc.player.getZ() - radius_); z < mc.player.getZ() + radius_; z++) {
+        for (int x = (int) (playerX - radius_); x < playerX + radius_; x++) {
+            for (int y = (int) (playerY - down_); y < playerY + up_; y++) {
+                for (int z = (int) (playerZ - radius_); z < playerZ + radius_; z++) {
                     BlockPos pos = new BlockPos(x, y, z);
                     if (mc.level.getBlockState(pos).isAir() || (fast.getValue() && plugin.is(Plugin.Old) && (x % 2 == 0 || y % 2 == 0 || z % 2 == 0))) {
                         continue;
@@ -250,6 +259,58 @@ public class Xray extends Module {
             }
         }
         return positions;
+    }
+
+    private boolean ensureWorldInitialized() {
+        if (nullCheck()) return false;
+        if (activeLevel != mc.level) initializeWorld();
+        return true;
+    }
+
+    private void initializeWorld() {
+        activeLevel = mc.level;
+        mc.smartCull = false;
+        reloadTerrain();
+        if (brutForce.getValue()) {
+            startDeobfuscation();
+        } else {
+            resetDeobfuscation();
+            area = getArea();
+        }
+    }
+
+    private void updateDeobfuscationState() {
+        if (!isEnabled() || nullCheck()) {
+            if (!brutForce.getValue()) resetDeobfuscation();
+            return;
+        }
+
+        if (activeLevel != mc.level) {
+            initializeWorld();
+            return;
+        }
+
+        if (brutForce.getValue()) {
+            startDeobfuscation();
+        } else {
+            resetDeobfuscation();
+        }
+    }
+
+    private void startDeobfuscation() {
+        resetDeobfuscation();
+        area = getArea();
+        toCheck.addAll(getBlocks());
+        all = toCheck.size();
+    }
+
+    private void resetDeobfuscation() {
+        ores.clear();
+        toCheck.clear();
+        checked.clear();
+        displayBlock = null;
+        done = 0;
+        all = 0;
     }
 
     private void log(String message) {

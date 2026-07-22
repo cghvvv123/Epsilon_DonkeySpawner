@@ -56,6 +56,11 @@ public class ArmorHUD extends HudModule {
     }
 
     @Override
+    protected boolean shouldRenderTextShadow() {
+        return !background.getValue();
+    }
+
+    @Override
     public void render(DeltaTracker deltaTracker) {
         float s = scale.getValue().floatValue();
         float itemSize = 16f * s;

@@ -46,6 +46,11 @@ public class PlayerRadarHUD extends HudModule {
     }
 
     @Override
+    protected boolean shouldRenderTextShadow() {
+        return !background.getValue();
+    }
+
+    @Override
     public void render(DeltaTracker deltaTracker) {
         if (nullCheck()) return;
 
