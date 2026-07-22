@@ -48,17 +48,17 @@ public class Xray extends Module {
     private final IntSetting radius = intSetting("Radius", 5, 1, 64, 1, brutForce::getValue);
     private final IntSetting up = intSetting("Up", 5, 1, 32, 1, brutForce::getValue);
     private final IntSetting down = intSetting("Down", 5, 1, 32, 1, brutForce::getValue);
-    private final BoolSetting netherite = boolSetting("Netherite", false);
-    private final BoolSetting diamond = boolSetting("Diamond ", false);
-    private final BoolSetting gold = boolSetting("Gold", false);
-    private final BoolSetting iron = boolSetting("Iron", false);
-    private final BoolSetting emerald = boolSetting("Emerald", false);
-    private final BoolSetting redstone = boolSetting("Redstone", false);
-    private final BoolSetting lapis = boolSetting("Lapis", false);
-    private final BoolSetting coal = boolSetting("Coal", false);
-    private final BoolSetting quartz = boolSetting("Quartz", false);
-    private final BoolSetting water = boolSetting("Water", false);
-    private final BoolSetting lava = boolSetting("Lava", false);
+    private final BoolSetting netherite = boolSetting("Netherite", false, _ -> reloadTerrain());
+    private final BoolSetting diamond = boolSetting("Diamond ", false, _ -> reloadTerrain());
+    private final BoolSetting gold = boolSetting("Gold", false, _ -> reloadTerrain());
+    private final BoolSetting iron = boolSetting("Iron", false, _ -> reloadTerrain());
+    private final BoolSetting emerald = boolSetting("Emerald", false, _ -> reloadTerrain());
+    private final BoolSetting redstone = boolSetting("Redstone", false, _ -> reloadTerrain());
+    private final BoolSetting lapis = boolSetting("Lapis", false, _ -> reloadTerrain());
+    private final BoolSetting coal = boolSetting("Coal", false, _ -> reloadTerrain());
+    private final BoolSetting quartz = boolSetting("Quartz", false, _ -> reloadTerrain());
+    private final BoolSetting water = boolSetting("Water", false, _ -> reloadTerrain());
+    private final BoolSetting lava = boolSetting("Lava", false, _ -> reloadTerrain());
 
     private final TimerUtils delayTimer = new TimerUtils();
     private final ArrayList<BlockPos> ores = new ArrayList<>();
@@ -254,6 +254,12 @@ public class Xray extends Module {
 
     private void log(String message) {
         Managers.NOTIFICATION.info("Xray", message);
+    }
+
+    private void reloadTerrain() {
+        if (mc.level != null) {
+            mc.levelRenderer.allChanged();
+        }
     }
 
     public static class BlockMemory {
