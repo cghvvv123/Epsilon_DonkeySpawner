@@ -74,28 +74,15 @@ public abstract class HudModule extends Module {
     }
 
     protected final void setBounds(float width, float height) {
-        boolean changed = this.width != width || this.height != height;
-        float oldWidth = this.width;
-        float oldHeight = this.height;
-        HorizontalAnchor resizeAnchor = getResizeHorizontalAnchor();
-        VerticalAnchor verticalResizeAnchor = getResizeVerticalAnchor();
-        float resizedX = switch (resizeAnchor) {
-            case Left -> this.x;
-            case Center -> this.x + (oldWidth - width) / 2.0f;
-            case Right -> this.x + oldWidth - width;
-        };
-        float resizedY = switch (verticalResizeAnchor) {
-            case Top -> this.y;
-            case Center -> this.y + (oldHeight - height) / 2.0f;
-            case Bottom -> this.y + oldHeight - height;
-        };
+        // 锚点（anchorX/anchorY）是用户设定的分辨率无关真值，只在拖拽（moveTo）时更新。
+        // 这里仅更新尺寸，并按稳定锚点重算 this.x/this.y，使屏幕锚点边在内容尺寸变化时保持固定
+        // （Right→右边固定、Left→左边固定、Center→中心固定）。
+        // 旧实现用 getResizeHorizontalAnchor()（文本对齐）算 resizedX、却用 horizontalAnchor 重新推导 anchorX，
+        // 两者不一致时（如 Right 锚点 + Left 对齐）anchorX 会随宽度漂移并被存盘，
+        // 表现为「保存后重启 HUD 位置变了」。
         this.width = width;
         this.height = height;
-        if (changed) {
-            applyRenderPosition(resizedX, resizedY, false);
-            anchorX = HudLayoutHelper.toAnchorX(horizontalAnchor, this.x, this.width, getScreenWidth());
-            anchorY = HudLayoutHelper.toAnchorY(verticalAnchor, this.y, this.height, getScreenHeight());
-        }
+        applyRenderPosition(getAnchoredRenderX(), getAnchoredRenderY(), false);
     }
 
     protected HorizontalAnchor getResizeHorizontalAnchor() {
