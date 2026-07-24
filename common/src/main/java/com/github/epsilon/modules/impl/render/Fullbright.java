@@ -25,6 +25,7 @@ public class Fullbright extends Module {
         if (v == Mode.Gamma && mc.player != null) {
             mc.player.removeEffect(MobEffects.NIGHT_VISION);
         }
+        reloadTerrain();
     });
 
     public boolean isGammaMode() {
@@ -32,14 +33,23 @@ public class Fullbright extends Module {
     }
 
     @Override
+    protected void onEnable() {
+        reloadTerrain();
+    }
+
+    @Override
     protected void onDisable() {
-        if (nullCheck() || mode.is(Mode.Gamma)) return;
-        mc.player.removeEffect(MobEffects.NIGHT_VISION);
+        if (!nullCheck() && !mode.is(Mode.Gamma)) mc.player.removeEffect(MobEffects.NIGHT_VISION);
+        reloadTerrain();
     }
 
     @EventHandler
     private void onPlayerTick(PlayerTickEvent.Pre event) {
         if (mode.is(Mode.Potion)) mc.player.addEffect(new MobEffectInstance(MobEffects.NIGHT_VISION, -1, 0));
+    }
+
+    private void reloadTerrain() {
+        if (mc.level != null) mc.levelRenderer.allChanged();
     }
 
 }
