@@ -20,16 +20,16 @@ public class MixinBlockModelLighter {
     @Inject(method = "prepareQuadAmbientOcclusion", at = @At("RETURN"))
     private void forceFullBrightAmbientOcclusion(BlockAndTintGetter level, BlockState state, BlockPos centerPosition,
                                                  BakedQuad quad, QuadInstance outputInstance, CallbackInfo ci) {
-        forceFullBright(outputInstance);
+        forceFullBright(outputInstance, state);
     }
 
     @Inject(method = "prepareQuadFlat", at = @At("RETURN"))
     private void forceFullBrightFlat(BlockAndTintGetter level, BlockState state, BlockPos pos, int lightCoords,
                                      BakedQuad quad, QuadInstance outputInstance, CallbackInfo ci) {
-        forceFullBright(outputInstance);
+        forceFullBright(outputInstance, state);
     }
 
-    private void forceFullBright(QuadInstance outputInstance) {
+    private void forceFullBright(QuadInstance outputInstance, BlockState state) {
         if (Xray.INSTANCE.isEnabled() && Fullbright.INSTANCE.isGammaMode()) {
             outputInstance.setLightCoords(LightCoordsUtil.pack(15, 15));
             outputInstance.setColor(-1);

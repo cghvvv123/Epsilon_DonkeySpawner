@@ -2,7 +2,6 @@ package com.github.epsilon.mixins;
 
 import com.github.epsilon.modules.impl.render.Filter;
 import com.github.epsilon.modules.impl.render.Fullbright;
-import com.github.epsilon.modules.impl.render.Xray;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.textures.GpuTexture;
 import net.minecraft.client.renderer.Lightmap;
@@ -23,7 +22,7 @@ public class MixinLightmap {
 
     @Inject(method = "render", at = @At("HEAD"), cancellable = true)
     private void onRender(LightmapRenderState renderState, CallbackInfo ci) {
-        if (Xray.INSTANCE.isEnabled() || Fullbright.INSTANCE.isGammaMode() || Filter.INSTANCE.isLightMapMode()) {
+        if (Fullbright.INSTANCE.isGammaMode() || Filter.INSTANCE.isLightMapMode()) {
             if (Filter.INSTANCE.isLightMapMode()) {
                 RenderSystem.getDevice().createCommandEncoder().clearColorTexture(this.texture, Filter.INSTANCE.getLightMapColor().getRGB());
             } else {
