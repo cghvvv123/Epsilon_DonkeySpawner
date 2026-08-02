@@ -1,5 +1,7 @@
 package com.github.epsilon.modules.impl.render.bettertooltips;
 
+import com.github.epsilon.assets.i18n.EpsilonTranslateComponent;
+import com.github.epsilon.assets.i18n.TranslateComponent;
 import com.github.epsilon.events.bus.EventHandler;
 import com.github.epsilon.events.impl.ItemStackTooltipEvent;
 import com.github.epsilon.events.impl.TooltipDataEvent;
@@ -85,6 +87,8 @@ public class BetterTooltips extends Module {
     private final BoolSetting entitiesInBuckets = boolSetting("Entities In Buckets", true).group(previews);
     private final BoolSetting bundles = boolSetting("Bundles", true).group(previews);
     private final BoolSetting foodInfo = boolSetting("Food Info", true).group(previews);
+    private final TranslateComponent foodTooltip = EpsilonTranslateComponent.create("modules", "better tooltips")
+            .createChild("food");
 
     private final BoolSetting byteSize = boolSetting("Byte Size", true).group(other);
     private final EnumSetting<SortSize> sizeType = enumSetting("Byte Size Format", SortSize.Dynamic, byteSize::getValue).group(other);
@@ -131,7 +135,7 @@ public class BetterTooltips extends Module {
 
         if (foodInfo.getValue() && event.itemStack().has(DataComponents.FOOD)) {
             FoodProperties food = event.itemStack().get(DataComponents.FOOD);
-            event.appendStart(Component.literal(String.format("Food %d (Saturation %.1f)", food.nutrition(), food.saturation()))
+            event.appendStart(Component.literal(String.format(foodTooltip.getTranslatedName(), food.nutrition(), food.saturation()))
                     .withStyle(ChatFormatting.GRAY));
         }
 
@@ -170,7 +174,8 @@ public class BetterTooltips extends Module {
                 && !(event.itemStack.getItem() instanceof BundleItem) && ContainerItemUtils.isContainer(event.itemStack)) {
             ContainerItemUtils.copyItems(event.itemStack, PREVIEW);
             if (hasPreviewItems()) {
-                event.tooltipData = new ContainerTooltipComponent(PREVIEW, ContainerItemUtils.backgroundColor(event.itemStack));
+                int columns = ContainerItemUtils.isThreeByThreeContainer(event.itemStack) ? 3 : 9;
+                event.tooltipData = new ContainerTooltipComponent(PREVIEW, ContainerItemUtils.backgroundColor(event.itemStack), columns);
             }
         } else if (event.itemStack.is(Items.ENDER_CHEST) && previewEChest()) {
             if (ContainerItemUtils.isContainer(event.itemStack)) {
@@ -200,7 +205,9 @@ public class BetterTooltips extends Module {
         } else if (event.itemStack.getItem() instanceof BundleItem && previewBundles()) {
             BundleContents contents = event.itemStack.get(DataComponents.BUNDLE_CONTENTS);
             if (contents != null && contents.size() > contents.getNumberOfItemsToShow()) {
-                ItemStack[] items = contents.itemCopyStream().toArray(ItemStack[]::new);
+                ItemStack[] items = contents.items().stream()
+                        .map(ContainerItemUtils::copyTemplateForDisplay)
+                        .toArray(ItemStack[]::new);
                 event.tooltipData = new BundleTooltipComponent(items, contents);
             }
         }

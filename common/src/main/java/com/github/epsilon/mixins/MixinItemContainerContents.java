@@ -1,5 +1,6 @@
 package com.github.epsilon.mixins;
 
+import com.github.epsilon.interfaces.ItemContainerContentsAccessor;
 import com.github.epsilon.modules.impl.render.bettertooltips.BetterTooltips;
 import net.minecraft.core.component.DataComponentGetter;
 import net.minecraft.network.chat.Component;
@@ -19,8 +20,13 @@ import java.util.Optional;
 import java.util.function.Consumer;
 
 @Mixin(ItemContainerContents.class)
-public abstract class MixinItemContainerContents {
+public abstract class MixinItemContainerContents implements ItemContainerContentsAccessor {
     @Shadow @Final private List<Optional<ItemStackTemplate>> items;
+
+    @Override
+    public List<Optional<ItemStackTemplate>> epsilon$getItems() {
+        return items;
+    }
 
     @Inject(method = "addToTooltip", at = @At("HEAD"), cancellable = true)
     private void epsilon$containerTooltip(Item.TooltipContext context, Consumer<Component> consumer, TooltipFlag flag, DataComponentGetter components, CallbackInfo ci) {

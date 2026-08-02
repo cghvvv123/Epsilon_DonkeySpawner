@@ -349,7 +349,11 @@ public class ContainerInventoryScreen extends Screen {
 
         if (containerItem.getItem() instanceof BundleItem) {
             BundleContents contents = containerItem.get(DataComponents.BUNDLE_CONTENTS);
-            if (contents != null) contents.itemCopyStream().forEach(containerItems::add);
+            if (contents != null) {
+                contents.items().stream()
+                        .map(ContainerItemUtils::copyTemplateForDisplay)
+                        .forEach(containerItems::add);
+            }
             containerColumns = 9;
             containerRows = Math.max(1, Mth.positiveCeilDiv(containerItems.size(), 9));
         } else {

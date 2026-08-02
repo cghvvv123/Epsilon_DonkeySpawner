@@ -1,5 +1,6 @@
 package com.github.epsilon.utils.player;
 
+import com.github.epsilon.interfaces.ItemContainerContentsAccessor;
 import com.github.epsilon.events.bus.EventHandler;
 import com.github.epsilon.events.impl.GameLeftEvent;
 import com.github.epsilon.events.impl.LevelUpdateEvent;
@@ -17,18 +18,23 @@ import net.minecraft.world.ItemStackWithSlot;
 import net.minecraft.world.inventory.ChestMenu;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.ItemStackTemplate;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.component.BundleContents;
+import net.minecraft.world.item.component.ItemContainerContents;
 import net.minecraft.world.item.component.DyedItemColor;
 import net.minecraft.world.item.component.TypedEntityData;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.ShulkerBoxBlock;
 import net.minecraft.world.level.block.entity.BlockEntityType;
+import net.minecraft.world.level.material.MapColor;
 
 import java.awt.*;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 import net.minecraft.world.item.DyeColor;
 
@@ -106,6 +112,10 @@ public final class ContainerItemUtils {
         return stack != null && (stack.is(Items.DISPENSER) || stack.is(Items.DROPPER));
     }
 
+    public static ItemStack copyTemplateForDisplay(ItemStackTemplate template) {
+        return new ItemStack(template.item(), template.count(), template.components());
+    }
+
     public static void copyItems(ItemStack stack, ItemStack[] output) {
         Arrays.fill(output, ItemStack.EMPTY);
         if (stack.is(Items.ENDER_CHEST)) {
@@ -116,20 +126,21 @@ public final class ContainerItemUtils {
             return;
         }
 
-        var container = stack.get(DataComponents.CONTAINER);
+        ItemContainerContents container = stack.get(DataComponents.CONTAINER);
         if (container != null) {
-            var items = container.allItemsCopyStream().toList();
+            List<Optional<ItemStackTemplate>> items = ((ItemContainerContentsAccessor) (Object) container).epsilon$getItems();
             for (int i = 0; i < items.size() && i < output.length; i++) {
-                output[i] = items.get(i);
+                Optional<ItemStackTemplate> item = items.get(i);
+                if (item.isPresent()) output[i] = copyTemplateForDisplay(item.get());
             }
             return;
         }
 
         BundleContents bundle = stack.get(DataComponents.BUNDLE_CONTENTS);
         if (bundle != null) {
-            var items = bundle.itemCopyStream().toList();
+            var items = bundle.items();
             for (int i = 0; i < items.size() && i < output.length; i++) {
-                output[i] = items.get(i);
+                output[i] = copyTemplateForDisplay(items.get(i));
             }
             return;
         }
@@ -161,10 +172,18 @@ public final class ContainerItemUtils {
     public static Color backgroundColor(ItemStack stack) {
         if (stack.is(Items.ENDER_CHEST)) return new Color(74, 48, 112, 220);
         if (stack.getItem() instanceof BlockItem blockItem) {
-            if (blockItem.getBlock() == Blocks.CHEST) return new Color(156, 102, 54, 220);
+            if (blockItem.getBlock() == Blocks.CHEST || blockItem.getBlock() == Blocks.BARREL) {
+                return new Color(156, 102, 54, 220);
+            }
             if (blockItem.getBlock() instanceof ShulkerBoxBlock shulkerBox) {
-                if (shulkerBox.getColor() == null) return new Color(135, 135, 135, 220);
-                int color = shulkerBox.getColor().getTextureDiffuseColor();
+                int color = shulkerBox.getColor() == null
+                        ? DyeColor.PURPLE.getTextureDiffuseColor()
+                        : shulkerBox.getColor().getTextureDiffuseColor();
+                return new Color((color >> 16) & 0xFF, (color >> 8) & 0xFF, color & 0xFF, 220);
+            }
+            MapColor mapColor = blockItem.getBlock().defaultMapColor();
+            if (mapColor != MapColor.NONE) {
+                int color = mapColor.col;
                 return new Color((color >> 16) & 0xFF, (color >> 8) & 0xFF, color & 0xFF, 220);
             }
         }

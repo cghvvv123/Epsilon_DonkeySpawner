@@ -173,6 +173,7 @@
         "entities in buckets": "Entities In Buckets",
         "bundles": "Bundles",
         "food info": "Food Info",
+        "food": "Restores %s hunger (Saturation: %s)",
         "byte size": "Byte Size",
         "byte size format": {
           "_value": "Byte Size Format",

@@ -173,6 +173,7 @@
         "entities in buckets": "桶中生物",
         "bundles": "收纳袋",
         "food info": "食物信息",
+        "food": "恢复饥饿值: %s (饱和度: %s)",
         "byte size": "字节大小",
         "byte size format": {
           "_value": "字节大小格式",
