@@ -32,6 +32,7 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.animal.Bucketable;
 import net.minecraft.world.food.FoodProperties;
 import net.minecraft.world.inventory.tooltip.TooltipComponent;
+import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.item.BannerItem;
 import net.minecraft.world.item.BundleItem;
 import net.minecraft.world.item.DyeColor;
@@ -45,6 +46,8 @@ import net.minecraft.world.item.component.CustomData;
 import net.minecraft.world.item.component.SuspiciousStewEffects;
 import net.minecraft.world.item.consume_effects.ApplyStatusEffectsConsumeEffect;
 import net.minecraft.world.item.ItemStackTemplate;
+import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.world.level.block.entity.BannerPattern;
 import net.minecraft.world.level.block.entity.BannerPatternLayers;
 import net.minecraft.world.level.saveddata.maps.MapId;
@@ -71,7 +74,6 @@ public class BetterTooltips extends Module {
     private final KeybindSetting previewKey = keybindSetting("Preview Key", GLFW.GLFW_KEY_LEFT_ALT, () -> displayWhen.is(DisplayWhen.Keybind));
     private final BoolSetting openContents = boolSetting("Open Contents", true).group(general);
     private final KeybindSetting openContentsKey = keybindSetting("Open Contents Key", KeybindUtils.encodeMouseButton(GLFW.GLFW_MOUSE_BUTTON_MIDDLE), openContents::getValue).group(general);
-    private final BoolSetting pauseInCreative = boolSetting("Pause In Creative", true, openContents::getValue).group(general);
 
     private final BoolSetting shulkers = boolSetting("Containers", true).group(previews);
     private final BoolSetting compactShulkerTooltip = boolSetting("Compact Shulker Tooltip", true).group(previews);
@@ -92,6 +94,7 @@ public class BetterTooltips extends Module {
     public final BoolSetting additional = boolSetting("Show Hidden Components", false).group(hideFlags);
 
     private static final ItemStack[] PREVIEW = new ItemStack[27];
+    private boolean openingPeek;
 
     private BetterTooltips() {
         super("Better Tooltips", Category.RENDER);
@@ -163,13 +166,16 @@ public class BetterTooltips extends Module {
 
     @EventHandler
     private void getTooltipData(TooltipDataEvent event) {
-        if (previewShulkers() && !event.itemStack.is(Items.ENDER_CHEST) && ContainerItemUtils.isContainer(event.itemStack)) {
+        if (previewShulkers() && !event.itemStack.is(Items.ENDER_CHEST)
+                && !(event.itemStack.getItem() instanceof BundleItem) && ContainerItemUtils.isContainer(event.itemStack)) {
             ContainerItemUtils.copyItems(event.itemStack, PREVIEW);
-            event.tooltipData = new ContainerTooltipComponent(PREVIEW, ContainerItemUtils.backgroundColor(event.itemStack));
+            if (hasPreviewItems()) {
+                event.tooltipData = new ContainerTooltipComponent(PREVIEW, ContainerItemUtils.backgroundColor(event.itemStack));
+            }
         } else if (event.itemStack.is(Items.ENDER_CHEST) && previewEChest()) {
             if (ContainerItemUtils.isContainer(event.itemStack)) {
                 ContainerItemUtils.copyItems(event.itemStack, PREVIEW);
-                event.tooltipData = new ContainerTooltipComponent(PREVIEW, ECHEST_COLOR);
+                if (hasPreviewItems()) event.tooltipData = new ContainerTooltipComponent(PREVIEW, ECHEST_COLOR);
             } else {
                 event.tooltipData = new TextTooltipComponent(Component.literal("Unknown inventory.").withStyle(ChatFormatting.DARK_RED));
             }
@@ -193,8 +199,8 @@ public class BetterTooltips extends Module {
             event.tooltipData = createEntityPreview(event.itemStack);
         } else if (event.itemStack.getItem() instanceof BundleItem && previewBundles()) {
             BundleContents contents = event.itemStack.get(DataComponents.BUNDLE_CONTENTS);
-            if (contents != null && !contents.isEmpty()) {
-                ItemStack[] items = contents.items().stream().map(ItemStackTemplate::create).toArray(ItemStack[]::new);
+            if (contents != null && contents.size() > contents.getNumberOfItemsToShow()) {
+                ItemStack[] items = contents.itemCopyStream().toArray(ItemStack[]::new);
                 event.tooltipData = new BundleTooltipComponent(items, contents);
             }
         }
@@ -284,14 +290,23 @@ public class BetterTooltips extends Module {
     }
 
     public boolean openContent(ItemStack stack) {
+        return openContent(stack, null, -1, mc.screen);
+    }
+
+    public boolean openContent(ItemStack stack, AbstractContainerMenu sourceMenu, int sourceSlotId, Screen parentScreen) {
         if (!openContents() || stack.isEmpty()) return false;
         if (stack.getItem() instanceof BundleItem || ContainerItemUtils.isContainer(stack)) {
-            if (mc.screen != null) mc.screen.onClose();
-            mc.setScreen(new ContainerInventoryScreen(stack));
+            if (!hasContainerContents(stack)) return false;
+            boolean preserveMenu = sourceMenu != null && parentScreen instanceof AbstractContainerScreen<?>;
+            openingPeek = preserveMenu;
+            try {
+                setScreenPreservingMouse(new ContainerInventoryScreen(stack, sourceMenu, sourceSlotId, parentScreen));
+            } finally {
+                openingPeek = false;
+            }
             return true;
         }
         if (stack.is(Items.WRITABLE_BOOK) || stack.is(Items.WRITTEN_BOOK)) {
-            if (mc.screen != null) mc.screen.onClose();
             mc.setScreen(new net.minecraft.client.gui.screens.inventory.BookViewScreen(net.minecraft.client.gui.screens.inventory.BookViewScreen.BookAccess.fromItem(stack)));
             return true;
         }
@@ -299,7 +314,43 @@ public class BetterTooltips extends Module {
     }
 
     public boolean openContents() {
-        return isEnabled() && openContents.getValue() && (mc.player == null || !pauseInCreative.getValue() || !mc.player.hasInfiniteMaterials());
+        return isEnabled() && openContents.getValue();
+    }
+
+    public boolean isOpeningPeek() {
+        return openingPeek;
+    }
+
+    private void setScreenPreservingMouse(Screen screen) {
+        double mouseX = mc.mouseHandler.xpos();
+        double mouseY = mc.mouseHandler.ypos();
+        boolean mouseGrabbed = mc.mouseHandler.isMouseGrabbed();
+        mc.setScreen(screen);
+        if (mouseGrabbed) {
+            mc.mouseHandler.setIgnoreFirstMove();
+            GLFW.glfwSetCursorPos(mc.getWindow().handle(), mouseX, mouseY);
+        }
+    }
+
+    private boolean hasPreviewItems() {
+        for (ItemStack item : PREVIEW) {
+            if (!item.isEmpty()) return true;
+        }
+        return false;
+    }
+
+    private boolean hasContainerContents(ItemStack stack) {
+        if (stack.getItem() instanceof BundleItem) {
+            BundleContents contents = stack.get(DataComponents.BUNDLE_CONTENTS);
+            return contents != null && !contents.isEmpty();
+        }
+        if (!ContainerItemUtils.isContainer(stack)) return false;
+        ItemStack[] items = new ItemStack[ContainerItemUtils.getItemCount(stack)];
+        ContainerItemUtils.copyItems(stack, items);
+        for (ItemStack item : items) {
+            if (!item.isEmpty()) return true;
+        }
+        return false;
     }
 
     public boolean previewShulkers() {

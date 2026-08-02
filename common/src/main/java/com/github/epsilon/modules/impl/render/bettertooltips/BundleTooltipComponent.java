@@ -18,7 +18,7 @@ public class BundleTooltipComponent implements ClientTooltipComponent, EpsilonTo
     private static final Identifier BORDER = Identifier.withDefaultNamespace("container/bundle/bundle_progressbar_border");
     private static final Identifier FILL = Identifier.withDefaultNamespace("container/bundle/bundle_progressbar_fill");
     private static final Identifier FULL = Identifier.withDefaultNamespace("container/bundle/bundle_progressbar_full");
-    private static final int SLOTS_PER_ROW = 8;
+    private static final int SLOTS_PER_ROW = 9;
     private static final int SLOT_SIZE = 24;
     private static final int WIDTH = 8 + SLOTS_PER_ROW * SLOT_SIZE + 8;
     private static final int BAR_WIDTH = 94;
