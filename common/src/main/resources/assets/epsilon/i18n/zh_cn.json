@@ -149,6 +149,43 @@
       }
     },
     "modules": {
+      "better tooltips": {
+        "_value": "更好的提示框",
+        "general": "常规",
+        "previews": "预览",
+        "other": "其他",
+        "hide flags": "隐藏标记",
+        "display when": {
+          "_value": "显示时机",
+          "keybind": "按键",
+          "always": "始终"
+        },
+        "preview key": "预览按键",
+        "open contents": "打开内容",
+        "open contents key": "打开内容按键",
+        "pause in creative": "创造模式暂停",
+        "containers": "容器",
+        "compact shulker tooltip": "紧凑潜影盒提示",
+        "ender chests": "末影箱",
+        "maps": "地图",
+        "map scale": "地图缩放",
+        "books": "书籍",
+        "banners": "旗帜",
+        "entities in buckets": "桶中生物",
+        "bundles": "收纳袋",
+        "food info": "食物信息",
+        "byte size": "字节大小",
+        "byte size format": {
+          "_value": "字节大小格式",
+          "bytes": "字节",
+          "kilobytes": "千字节",
+          "megabytes": "兆字节",
+          "dynamic": "动态"
+        },
+        "status effects": "状态效果",
+        "show hidden tooltip": "显示隐藏提示",
+        "show hidden components": "显示隐藏组件"
+      },
       "elytra fly": {
         "takeoff": "起飞",
         "speed": "速度",

@@ -88,6 +88,7 @@ public class EpsilonGuiRenderer implements AutoCloseable {
     private final SubmitNodeCollector submitNodeCollector;
     private final FeatureRenderDispatcher featureRenderDispatcher;
     private final GuiEntityRenderer entityRenderer;
+    private final CustomBannerGuiElementRenderer bannerRenderer;
     private GuiItemAtlas itemAtlas;
     private double cachedGuiScale = Double.NaN;
     private final CubeMap cubeMap = new CubeMap(Identifier.withDefaultNamespace("textures/gui/title/background/panorama"));
@@ -108,6 +109,7 @@ public class EpsilonGuiRenderer implements AutoCloseable {
         this.featureRenderDispatcher = featureRenderDispatcher;
         // GuiGraphicsExtractor.entity 提交的是 PIP 状态，必须由对应 renderer 先渲染到纹理再合成到 HUD。
         this.entityRenderer = new GuiEntityRenderer(bufferSource, mc.getEntityRenderDispatcher());
+        this.bannerRenderer = new CustomBannerGuiElementRenderer(bufferSource, mc.getAtlasManager());
     }
 
     public void endFrame() {
@@ -176,6 +178,8 @@ public class EpsilonGuiRenderer implements AutoCloseable {
         this.renderState.forEachPictureInPicture(state -> {
             if (state instanceof GuiEntityRenderState entityState) {
                 this.entityRenderer.prepare(entityState, this.renderState, guiScale);
+            } else if (state instanceof CustomBannerGuiElementRenderState bannerState) {
+                this.bannerRenderer.prepare(bannerState, this.renderState, guiScale);
             }
         });
     }
@@ -568,6 +572,7 @@ public class EpsilonGuiRenderer implements AutoCloseable {
 
         this.oversizedItemRenderers.values().forEach(PictureInPictureRenderer::close);
         this.entityRenderer.close();
+        this.bannerRenderer.close();
         this.cubeMap.close();
     }
 

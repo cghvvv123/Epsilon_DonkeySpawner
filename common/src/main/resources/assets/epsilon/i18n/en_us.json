@@ -149,6 +149,43 @@
       }
     },
     "modules": {
+      "better tooltips": {
+        "_value": "Better Tooltips",
+        "general": "General",
+        "previews": "Previews",
+        "other": "Other",
+        "hide flags": "Hide Flags",
+        "display when": {
+          "_value": "Display When",
+          "keybind": "Keybind",
+          "always": "Always"
+        },
+        "preview key": "Preview Key",
+        "open contents": "Open Contents",
+        "open contents key": "Open Contents Key",
+        "pause in creative": "Pause In Creative",
+        "containers": "Containers",
+        "compact shulker tooltip": "Compact Shulker Tooltip",
+        "ender chests": "Ender Chests",
+        "maps": "Maps",
+        "map scale": "Map Scale",
+        "books": "Books",
+        "banners": "Banners",
+        "entities in buckets": "Entities In Buckets",
+        "bundles": "Bundles",
+        "food info": "Food Info",
+        "byte size": "Byte Size",
+        "byte size format": {
+          "_value": "Byte Size Format",
+          "bytes": "Bytes",
+          "kilobytes": "Kilobytes",
+          "megabytes": "Megabytes",
+          "dynamic": "Dynamic"
+        },
+        "status effects": "Status Effects",
+        "show hidden tooltip": "Show Hidden Tooltip",
+        "show hidden components": "Show Hidden Components"
+      },
       "elytra fly": {
         "_value": "Elytra Fly",
         "takeoff": "Takeoff",

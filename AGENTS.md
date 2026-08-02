@@ -537,3 +537,10 @@ textRenderer.drawAndClear();
 - **Mixin 文档**：https://wiki.fabricmc.net/zh_cn:tutorial:mixin_introduction
 - **Fabric API 文档**：https://docs.fabricmc.net/develop/
 - **项目自身 graphics 文档**：`common/src/main/java/com/github/epsilon/graphics/README.md`
+### BetterTooltips
+
+`BetterTooltips` is registered by `ModuleHolder` and lives in
+`common/src/main/java/com/github/epsilon/modules/impl/render/bettertooltips/`.
+Its tooltip events and Mixin integration live in `events/impl/` and `mixins/`.
+Shulker-box previews are always visible; other previews retain configurable
+preview-key behavior.

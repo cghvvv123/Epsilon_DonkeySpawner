@@ -19,6 +19,7 @@ import com.github.epsilon.modules.impl.movement.follower.Follower;
 import com.github.epsilon.modules.impl.player.*;
 import com.github.epsilon.modules.impl.render.*;
 import com.github.epsilon.modules.impl.render.maseffects.MasEffects;
+import com.github.epsilon.modules.impl.render.bettertooltips.BetterTooltips;
 import com.github.epsilon.utils.client.KeybindUtils;
 import com.mojang.blaze3d.platform.InputConstants;
 import org.lwjgl.glfw.GLFW;
@@ -120,6 +121,7 @@ public class ModuleHolder {
 
         // Render
         addModule(AntiAlias.INSTANCE);
+        addModule(BetterTooltips.INSTANCE);
         addModule(AspectRatio.INSTANCE);
         addModule(BlockESP.INSTANCE);
         addModule(BlockHighlight.INSTANCE);
