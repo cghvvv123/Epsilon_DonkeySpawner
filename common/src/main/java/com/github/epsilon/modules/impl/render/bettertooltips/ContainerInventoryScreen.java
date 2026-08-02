@@ -43,9 +43,11 @@ public class ContainerInventoryScreen extends Screen {
     private final Screen parentScreen;
     private final ScrollWheelHandler scrollWheelHandler = new ScrollWheelHandler();
     private int containerRows;
+    private int containerColumns;
     private int x;
     private int y;
     private int baseX;
+    private int containerBaseX;
     private int baseY;
     private int playerY;
 
@@ -81,16 +83,19 @@ public class ContainerInventoryScreen extends Screen {
         playerY = baseY + containerRows * SLOT_SIZE + 20;
 
         for (int row = 0; row < containerRows + 4; row++) {
-            for (int col = 0; col < 9; col++) {
+            int columns = row < containerRows ? containerColumns : 9;
+            for (int col = 0; col < columns; col++) {
                 int slotY = row < containerRows ? baseY + row * SLOT_SIZE : playerY + (row - containerRows) * SLOT_SIZE;
-                graphics.blitSprite(RenderPipelines.GUI_TEXTURED, SLOT_TEXTURE, baseX + col * SLOT_SIZE, slotY, SLOT_SIZE, SLOT_SIZE);
+                int slotX = row < containerRows ? containerBaseX + col * SLOT_SIZE : baseX + col * SLOT_SIZE;
+                graphics.blitSprite(RenderPipelines.GUI_TEXTURED, SLOT_TEXTURE, slotX, slotY, SLOT_SIZE, SLOT_SIZE);
             }
         }
-        for (int i = 0; i < containerItems.size(); i++) {
+        int containerSlotCount = containerRows * containerColumns;
+        for (int i = 0; i < containerItems.size() && i < containerSlotCount; i++) {
             ItemStack item = containerItems.get(i);
             if (!item.isEmpty()) {
-                int itemX = baseX + (i % 9) * SLOT_SIZE + 1;
-                int itemY = baseY + (i / 9) * SLOT_SIZE + 1;
+                int itemX = containerBaseX + (i % containerColumns) * SLOT_SIZE + 1;
+                int itemY = baseY + (i / containerColumns) * SLOT_SIZE + 1;
                 graphics.item(item, itemX, itemY);
                 graphics.itemDecorations(font, item, itemX, itemY);
             }
@@ -231,10 +236,11 @@ public class ContainerInventoryScreen extends Screen {
     }
 
     private int getContainerGridIndex(int mouseX, int mouseY) {
-        if (mouseX < baseX || mouseX >= baseX + 9 * SLOT_SIZE || mouseY < baseY || mouseY >= baseY + containerRows * SLOT_SIZE) {
+        if (mouseX < containerBaseX || mouseX >= containerBaseX + containerColumns * SLOT_SIZE
+                || mouseY < baseY || mouseY >= baseY + containerRows * SLOT_SIZE) {
             return -1;
         }
-        return (mouseY - baseY) / SLOT_SIZE * 9 + (mouseX - baseX) / SLOT_SIZE;
+        return (mouseY - baseY) / SLOT_SIZE * containerColumns + (mouseX - containerBaseX) / SLOT_SIZE;
     }
 
     private boolean putBundleItem(int index) {
@@ -344,9 +350,11 @@ public class ContainerInventoryScreen extends Screen {
         if (containerItem.getItem() instanceof BundleItem) {
             BundleContents contents = containerItem.get(DataComponents.BUNDLE_CONTENTS);
             if (contents != null) contents.itemCopyStream().forEach(containerItems::add);
+            containerColumns = 9;
             containerRows = Math.max(1, Mth.positiveCeilDiv(containerItems.size(), 9));
         } else {
-            ItemStack[] items = new ItemStack[27];
+            containerColumns = ContainerItemUtils.isThreeByThreeContainer(containerItem) ? 3 : 9;
+            ItemStack[] items = new ItemStack[containerColumns * 3];
             ContainerItemUtils.copyItems(containerItem, items);
             for (ItemStack item : items) containerItems.add(item);
             containerRows = 3;
@@ -360,8 +368,9 @@ public class ContainerInventoryScreen extends Screen {
 
     private void syncContainerItems() {
         int previousRows = containerRows;
+        int previousColumns = containerColumns;
         refreshContainerItems();
-        if (previousRows != containerRows) updateLayout();
+        if (previousRows != containerRows || previousColumns != containerColumns) updateLayout();
     }
 
     private void updateLayout() {
@@ -373,6 +382,7 @@ public class ContainerInventoryScreen extends Screen {
 
     private void updateCoordinates() {
         baseX = x + 8;
+        containerBaseX = x + (SCREEN_WIDTH - containerColumns * SLOT_SIZE) / 2;
         baseY = y + 18;
         playerY = baseY + containerRows * SLOT_SIZE + 20;
     }

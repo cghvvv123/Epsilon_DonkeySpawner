@@ -102,6 +102,10 @@ public final class ContainerItemUtils {
         return stack != null && !stack.isEmpty() && stack.has(DataComponents.BUNDLE_CONTENTS);
     }
 
+    public static boolean isThreeByThreeContainer(ItemStack stack) {
+        return stack != null && (stack.is(Items.DISPENSER) || stack.is(Items.DROPPER));
+    }
+
     public static void copyItems(ItemStack stack, ItemStack[] output) {
         Arrays.fill(output, ItemStack.EMPTY);
         if (stack.is(Items.ENDER_CHEST)) {
@@ -150,6 +154,7 @@ public final class ContainerItemUtils {
             BundleContents bundle = stack.get(DataComponents.BUNDLE_CONTENTS);
             return bundle == null ? 0 : bundle.size();
         }
+        if (isThreeByThreeContainer(stack)) return 9;
         return INVENTORY_SIZE;
     }
 
