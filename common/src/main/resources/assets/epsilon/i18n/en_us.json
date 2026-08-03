@@ -186,6 +186,18 @@
         "show hidden tooltip": "Show Hidden Tooltip",
         "show hidden components": "Show Hidden Components"
       },
+      "middle click extra": {
+        "_value": "Middle Click Extra",
+        "notification channel": {
+          "_value": "Notification Channel",
+          "chat": "Chat",
+          "hud": "HUD",
+          "both": "Both"
+        },
+        "friend_added": "Added {name} to friends",
+        "friend_removed": "Removed {name} from friends",
+        "no_ender_pearl": "No ender pearl in the inventory"
+      },
       "elytra fly": {
         "_value": "Elytra Fly",
         "takeoff": "Takeoff",

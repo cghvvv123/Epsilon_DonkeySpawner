@@ -186,6 +186,18 @@
         "show hidden tooltip": "显示隐藏提示",
         "show hidden components": "显示隐藏组件"
       },
+      "middle click extra": {
+        "_value": "中键额外动作",
+        "notification channel": {
+          "_value": "通知渠道",
+          "chat": "聊天栏",
+          "hud": "HUD",
+          "both": "聊天和HUD通知"
+        },
+        "friend_added": "已将 {name} 添加到好友名单",
+        "friend_removed": "已将 {name} 从好友名单中移除",
+        "no_ender_pearl": "背包中没有末影珍珠"
+      },
       "elytra fly": {
         "takeoff": "起飞",
         "speed": "速度",

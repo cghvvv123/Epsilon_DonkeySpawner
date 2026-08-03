@@ -122,7 +122,10 @@ public final class EpsilonTranslations {
             PlayerAlarms.UNKNOWN_GAMEMODE,
             EntityControl.ACTIVATED,
             EntityControl.DEACTIVATED,
-            EntityControl.DEACTIVATED_DISMOUNT
+            EntityControl.DEACTIVATED_DISMOUNT,
+            MiddleClickExtra.FRIEND_ADDED,
+            MiddleClickExtra.FRIEND_REMOVED,
+            MiddleClickExtra.NO_ENDER_PEARL
     );
 
     private EpsilonTranslations() {
@@ -297,6 +300,15 @@ public final class EpsilonTranslations {
         public static final TranslateComponent DEACTIVATED_DISMOUNT = create("modules.entity control", "deactivated_dismount");
 
         private EntityControl() {
+        }
+    }
+
+    public static final class MiddleClickExtra {
+        public static final TranslateComponent FRIEND_ADDED = create("modules.middle click extra", "friend_added");
+        public static final TranslateComponent FRIEND_REMOVED = create("modules.middle click extra", "friend_removed");
+        public static final TranslateComponent NO_ENDER_PEARL = create("modules.middle click extra", "no_ender_pearl");
+
+        private MiddleClickExtra() {
         }
     }
 
